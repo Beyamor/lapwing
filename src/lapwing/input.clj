@@ -16,11 +16,11 @@
 
 (defn is-down?
   [input key]
-  (if-let [alias (get-in @input [:aliases key])]
+  (if-let [alias (get-in input [:aliases key])]
     (if (coll? alias)
       (some #(is-down? input %) alias)
       (is-down? input alias))
-    (= :down (get-in @input [:key-states key]))))
+    (= :down (get-in input [:key-states key]))))
 
 (defn is-up?
   [input key]

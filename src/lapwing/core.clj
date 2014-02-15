@@ -19,7 +19,7 @@
          {:x 300
           :y 300}
          :keyboard-movement
-         {:speed  5}
+         {:speed 7}
          :debug-rect
          {:width   48
           :height  48
@@ -92,9 +92,10 @@
 (defn run
   [render-state input-state]
   (loop [game-state {:entities (create-entities)}]
-    (let [new-state (-> game-state
-                      (->/in [:entities]
-                             (move-player input-state)))]
+    (let [input-state @input-state
+          new-state   (-> game-state
+                        (->/in [:entities]
+                               (move-player input-state)))]
       (send render-state (constantly new-state))
       (Thread/sleep 20)
       (recur new-state))))
