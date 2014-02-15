@@ -26,7 +26,7 @@
 
     :update  (fn [player es input-state]
                (-> player
-                 (->/when (input/is-down? input-state :jump)
+                 (->/when (input/was-pressed? input-state :jump)
                           (change-state :jumping))))}
 
    :jumping

@@ -120,7 +120,7 @@
 (defn run
   [render-state input-state]
   (loop [game-state {:entities (create-entities)}]
-    (let [input-state @input-state
+    (let [input-state (input/update! input-state)
           new-state   (-> game-state
                         (->/in [:entities]
                                (updated-key-walkers input-state)
