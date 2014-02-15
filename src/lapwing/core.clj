@@ -107,7 +107,7 @@
                    (update-in [:vel :y] inc)))))))
 
 (defn update-player-state
-  [es]
+  [es input-state]
   (-> es
     (entities/update-those-with
       [:player-state]
@@ -122,7 +122,16 @@
                        (assoc :gravity false)
                        (assoc-in [:vel :y] 0))))
 
-          e)))))
+          :default
+          (-> e
+            (->/when (input/is-down? input-state :jump)
+                     (assoc-in [:vel :y] -10)
+                     (assoc :player-state :jumping)))
+
+          :jumping
+          (-> e
+            (assoc :player-state :falling)
+            (assoc :gravity true)))))))
 
 (defn run
   [render-state input-state]
@@ -131,7 +140,7 @@
           new-state   (-> game-state
                         (->/in [:entities]
                                (updated-key-walkers input-state)
-                               update-player-state
+                               (update-player-state input-state)
                                apply-gravity
                                integrate-velocities))]
       (send render-state (constantly new-state))
@@ -143,7 +152,8 @@
   (let [render-state  (agent nil)
         input-state   (doto (input/create-state)
                         (input/def!
-                          :walk-left  [KeyEvent/VK_A KeyEvent/VK_KP_LEFT KeyEvent/VK_LEFT]
+                          :jump       [KeyEvent/VK_W KeyEvent/VK_KP_UP    KeyEvent/VK_UP]
+                          :walk-left  [KeyEvent/VK_A KeyEvent/VK_KP_LEFT  KeyEvent/VK_LEFT]
                           :walk-right [KeyEvent/VK_D KeyEvent/VK_KP_RIGHT KeyEvent/VK_RIGHT]))
         canvas        (create-canvas [800 600] render-state input-state)]
     (doto (Thread. #(run render-state input-state))
