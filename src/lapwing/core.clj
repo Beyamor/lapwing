@@ -17,40 +17,28 @@
   (entities/create
     (concat
       [(entity/create
-         :pos
-         {:x 300
-          :y 300}
-         :vel
-         {:x 0
-          :y 0}
-         :key-walker
-         {:speed 7}
-         :debug-rect
-         "red"
-         :gravity
-         true
-         :hitbox
-         {:width  48
-          :height 48}
-         :state-machine
-         {:name   :player
-          :state  :falling}
-         :player-jumper
-         {:initial-amount         10
-          :additional-amount      0.5
-          :number-of-additionals  5})]
+         :pos {:x 300
+               :y 300}
+         :vel {:x 0
+               :y 0}
+         :key-walker {:speed 7}
+         :debug-rect "red"
+         :gravity true
+         :hitbox {:width  48
+                  :height 48}
+         :state-machine {:name   :player
+                         :state  :falling}
+         :player-jumper {:initial-amount         10
+                         :additional-amount      0.5
+                         :number-of-additionals  5})]
       (for [x (range 0 800 48)]
         (entity/create
-          :pos
-          {:x x
-           :y 500}
-          :debug-rect
-          "black"
-          :hitbox
-          {:width   48
-           :height  48}
-          :solid
-          true)))))
+          :pos {:x x
+                :y 500}
+          :debug-rect "black"
+          :hitbox {:width   48
+                   :height  48}
+          :solid true)))))
 
 (defn create-canvas
   [[width height] render-state input-state]
