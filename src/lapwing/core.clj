@@ -24,20 +24,22 @@
          :key-walker
          {:speed 7}
          :debug-rect
-         {:width   48
-          :height  48
-          :color   :red}
+         "red"
          :gravity
-         true)]
+         true
+         :hitbox
+         {:width  48
+          :height 48})]
       (for [x (range 0 800 48)]
         (entity/create
           :pos
           {:x x
            :y 500}
           :debug-rect
+          "black"
+          :hitbox
           {:width   48
-           :height  48
-           :color   :black})))))
+           :height  48})))))
 
 (defn create-canvas
   [[width height] render-state input-state]
@@ -52,12 +54,12 @@
                                (doto g
                                  (.setBackground (s.col/color "white"))
                                  (.clearRect 0 0 width height))
-                               (doseq [[_ {:keys [pos debug-rect]}] (:entities render-state)
+                               (doseq [[_ {:keys [pos debug-rect hitbox]}] (:entities render-state)
                                        :when debug-rect]
                                  (doto g
-                                   (.setColor (s.col/color (:color debug-rect)))
+                                   (.setColor (s.col/color debug-rect))
                                    (.fillRect (:x pos) (:y pos)
-                                              (:width debug-rect) (:height debug-rect)))))))
+                                              (:width hitbox) (:height hitbox)))))))
                  :listen  [:key-pressed   (set-key-state! :down)
                            :key-released  (set-key-state! :up)])]
     (.setFocusable canvas true)
