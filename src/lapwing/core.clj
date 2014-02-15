@@ -104,8 +104,8 @@
   (let [render-state  (agent nil)
         input-state   (doto (input/create-state)
                         (input/def!
-                          :walk-left  KeyEvent/VK_A
-                          :walk-right KeyEvent/VK_D))
+                          :walk-left  [KeyEvent/VK_A KeyEvent/VK_KP_LEFT KeyEvent/VK_LEFT]
+                          :walk-right [KeyEvent/VK_D KeyEvent/VK_KP_RIGHT KeyEvent/VK_RIGHT]))
         canvas        (create-canvas [800 600] render-state input-state)]
     (doto (Thread. #(run render-state input-state))
       .start)
