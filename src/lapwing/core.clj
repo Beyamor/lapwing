@@ -28,7 +28,7 @@
           :height  48
           :color   :red}
          :gravity
-         10)]
+         true)]
       (for [x (range 0 800 48)]
         (entity/create
           :pos
@@ -90,6 +90,16 @@
           (update-in [:pos :x] + vx)
           (update-in [:pos :y] + vy))))))
 
+(defn apply-gravity
+  [es]
+  (-> es
+    (entities/update-those-with
+      [:vel :gravity]
+      (fn [{:keys [gravity] :as e}]
+        (-> e
+          (->/when gravity
+                   (update-in [:vel :y] inc)))))))
+
 (defn run
   [render-state input-state]
   (loop [game-state {:entities (create-entities)}]
@@ -97,6 +107,7 @@
           new-state   (-> game-state
                         (->/in [:entities]
                                (updated-key-walkers input-state)
+                               apply-gravity
                                integrate-velocities))]
       (send render-state (constantly new-state))
       (Thread/sleep 20)
