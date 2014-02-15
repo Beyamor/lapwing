@@ -3,6 +3,7 @@
             [lapwing.image :as image]
             [lapwing.entities :as entities]
             [lapwing.entity :as entity]
+            [lapwing.entity.fsm :as fsm]
             [lapwing.input :as input]
             [lapwing.player :as player]
             [seesaw.core :as s]
@@ -31,8 +32,9 @@
          :hitbox
          {:width  48
           :height 48}
-         :player-state
-         :falling
+         :state-machine
+         {:name   :player
+          :state  :falling}
          :player-jumper
          {:initial-amount         10
           :additional-amount      0.5
@@ -111,13 +113,13 @@
           (->/when gravity
                    (update-in [:vel :y] inc)))))))
 
-(defn update-player-state
+(defn update-fsm
   [es input-state]
   (-> es
     (entities/update-those-with
-      [:player-state]
+      [:state-machine]
       (fn [player]
-        (player/update-state player es input-state)))))
+        (fsm/update player es input-state)))))
 
 (defn run
   [render-state input-state]
@@ -126,7 +128,7 @@
           new-state   (-> game-state
                         (->/in [:entities]
                                (updated-key-walkers input-state)
-                               (update-player-state input-state)
+                               (update-fsm input-state)
                                apply-gravity
                                integrate-velocities))]
       (send render-state (constantly new-state))
