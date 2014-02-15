@@ -6,11 +6,12 @@
             [seesaw.timer :as s.time]
             [lonocloud.synthread :as ->]))
 
-(image/def!
-  :player-sprite "lapwing.jpg")
-
 (def initial-player
-  {:pos {:x 300 :y 300}})
+  {:pos         {:x 300
+                 :y 300}
+   :debug-rect  {:width   48
+                 :height  48
+                 :color   :red}})
 
 (defn create-entities
   []
@@ -22,15 +23,18 @@
   (let [canvas (s/canvas 
                  :size   [width :by height]
                  :paint  (fn [c g]
-                           (let [render-state @render-state
-                                 image        (image/get :player-sprite)]
+                           (let [render-state @render-state]
                              (when render-state
                                (doto g
                                  (.setBackground (s.col/color "white"))
                                  (.clearRect 0 0 width height)
                                  (.setColor (s.col/color "black")))
-                               (doseq [[_ {:keys [pos]}] (:entities render-state)]
-                                 (.drawImage g image (:x pos) (:y pos) nil))))))]
+                               (doseq [[_ {:keys [pos debug-rect]}] (:entities render-state)
+                                       :when debug-rect]
+                                 (doto g
+                                   (.setColor (s.col/color (:color debug-rect)))
+                                   (.fillRect (:x pos) (:y pos)
+                                              (:width debug-rect) (:height debug-rect))))))))]
     (s.time/timer
       (fn [_]
         (s/repaint! canvas))
@@ -47,13 +51,13 @@
 (defn run
   [render-state]
   (try
-  (loop [game-state {:entities (create-entities)}]
-    (let [new-state (-> game-state
-                      (->/in [:entities]
-                             update-positions))]
-      (send render-state (constantly new-state))
-      (Thread/sleep 20)
-      (recur new-state)))
+    (loop [game-state {:entities (create-entities)}]
+      (let [new-state (-> game-state
+                        (->/in [:entities]
+                               update-positions))]
+        (send render-state (constantly new-state))
+        (Thread/sleep 20)
+        (recur new-state)))
     (catch Exception e
       (.printStackTrace e))))
 
