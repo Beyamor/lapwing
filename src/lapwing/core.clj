@@ -4,6 +4,7 @@
             [lapwing.entities :as entities]
             [lapwing.entity :as entity]
             [lapwing.input :as input]
+            [lapwing.player :as player]
             [seesaw.core :as s]
             [seesaw.color :as s.col]
             [seesaw.timer :as s.time]
@@ -111,27 +112,8 @@
   (-> es
     (entities/update-those-with
       [:player-state]
-      (fn [e]
-        (case (:player-state e)
-          :falling
-          (let [solids  (entities/those-with es [:solid])
-                check-e (update-in e [:pos :y] inc)]
-            (-> e
-              (->/when (entities/any? solids #(entity/collide? check-e %))
-                       (assoc :player-state :default)
-                       (assoc :gravity false)
-                       (assoc-in [:vel :y] 0))))
-
-          :default
-          (-> e
-            (->/when (input/is-down? input-state :jump)
-                     (assoc-in [:vel :y] -10)
-                     (assoc :player-state :jumping)))
-
-          :jumping
-          (-> e
-            (assoc :player-state :falling)
-            (assoc :gravity true)))))))
+      (fn [player]
+        (player/update-state player es input-state)))))
 
 (defn run
   [render-state input-state]
