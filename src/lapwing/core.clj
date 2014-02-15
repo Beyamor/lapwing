@@ -2,7 +2,8 @@
   (:require [lapwing.util :as util]
             [seesaw.core :as s]
             [seesaw.color :as s.col]
-            [seesaw.timer :as s.time]))
+            [seesaw.timer :as s.time]
+            [lonocloud.synthread :as ->]))
 
 (def initial-player
   {:pos {:x 300 :y 300}})
@@ -33,14 +34,26 @@
       :delay 17)
     canvas))
 
+(defn update-positions
+  [entities]
+  (util/map-over-keys
+    (fn [e]
+      (update-in e [:pos :x] + 1))
+    entities))
+
 (defn -main
   [& args]
-  (let [game-state    {:entities  (create-entities)}
-        render-state  (agent nil)
+  (let [render-state  (agent nil)
         canvas        (create-canvas [800 600] render-state)]
-    (s.time/timer
-      (fn [_]
-        (send render-state (constantly game-state))))
+    (-> (fn []
+          (loop [game-state {:entities (create-entities)}]
+            (let [new-state (-> game-state
+                              (->/in [:entities]
+                                     update-positions))]
+              (send render-state (constantly new-state))
+              (Thread/sleep 20)
+              (recur new-state))))
+      Thread. .start)
     (s/invoke-later
       (-> (s/frame
             :title    "Lapwing"
