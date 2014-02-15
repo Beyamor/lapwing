@@ -30,11 +30,19 @@
                           (change-state :jumping))))}
 
    :jumping
-   {:begin   (fn [{:keys [jumper] :as player}]
-               (assoc-in player [:vel :y] (* -1 jumper)))
-
-    :update  (fn [player es input-state]
-               (change-state player :falling))}})
+   {:begin   (fn [{{:keys [initial-amount]} :player-jumper :as player}]
+               (-> player
+                 (update-in [:vel :y] - initial-amount)
+                 (assoc-in [:player-jumper :additionals-applied] 0)))
+    :update  (fn [{{:keys [additionals-applied number-of-additionals additional-amount]} :player-jumper :as player}
+                  es input-state]
+               (-> player
+                 (->/if (or (>= additionals-applied number-of-additionals)
+                            (input/was-released? input-state :jump))
+                        (change-state :falling)
+                        (->
+                          (update-in [:vel :y] - additional-amount)
+                          (update-in [:player-jumper :additionals-applied] inc)))))}})
 
 (defn change-state
   [player new-state]

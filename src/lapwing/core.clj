@@ -33,8 +33,10 @@
           :height 48}
          :player-state
          :falling
-         :jumper
-         15)]
+         :player-jumper
+         {:initial-amount         10
+          :additional-amount      0.5
+          :number-of-additionals  5})]
       (for [x (range 0 800 48)]
         (entity/create
           :pos
