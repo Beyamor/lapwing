@@ -32,7 +32,9 @@
          {:width  48
           :height 48}
          :player-state
-         :falling)]
+         :falling
+         :jumper
+         15)]
       (for [x (range 0 800 48)]
         (entity/create
           :pos

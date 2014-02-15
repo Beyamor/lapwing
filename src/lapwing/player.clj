@@ -30,8 +30,8 @@
                           (change-state :jumping))))}
 
    :jumping
-   {:begin   (fn [player]
-               (assoc-in player [:vel :y] -10))
+   {:begin   (fn [{:keys [jumper] :as player}]
+               (assoc-in player [:vel :y] (* -1 jumper)))
 
     :update  (fn [player es input-state]
                (change-state player :falling))}})
