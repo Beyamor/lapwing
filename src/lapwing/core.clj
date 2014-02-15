@@ -1,22 +1,30 @@
 (ns lapwing.core
   (:require [lapwing.util :as util]
             [lapwing.image :as image]
+            [lapwing.entities :as entities]
+            [lapwing.entity :as entity]
             [seesaw.core :as s]
             [seesaw.color :as s.col]
             [seesaw.timer :as s.time]
             [lonocloud.synthread :as ->]))
 
-(def initial-player
-  {:pos         {:x 300
-                 :y 300}
-   :debug-rect  {:width   48
-                 :height  48
-                 :color   :red}})
-
 (defn create-entities
   []
-  (let [player-id (util/gen-id)]
-    {player-id initial-player}))
+  (entities/create
+    (concat
+      [(entity/create
+         :pos        {:x 300
+                      :y 300}
+         :debug-rect {:width   48
+                      :height  48
+                      :color   :red})]
+      (for [x (range 0 800 48)]
+        (entity/create
+          :pos          {:x x
+                         :y 500}
+          :debug-rect {:width   48
+                       :height  48
+                       :color   :black})))))
 
 (defn create-canvas
   [[width height] render-state]
