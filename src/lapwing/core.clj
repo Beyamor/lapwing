@@ -3,79 +3,111 @@
             [lapwing.image :as image]
             [lapwing.entities :as entities]
             [lapwing.entity :as entity]
+            [lapwing.input :as input]
             [seesaw.core :as s]
             [seesaw.color :as s.col]
             [seesaw.timer :as s.time]
-            [lonocloud.synthread :as ->]))
+            [lonocloud.synthread :as ->])
+  (:import java.awt.event.KeyEvent))
 
 (defn create-entities
   []
   (entities/create
     (concat
       [(entity/create
-         :pos        {:x 300
-                      :y 300}
-         :player      true
-         :debug-rect {:width   48
-                      :height  48
-                      :color   :red})]
+         :pos
+         {:x 300
+          :y 300}
+         :keyboard-movement
+         {:speed  5}
+         :debug-rect
+         {:width   48
+          :height  48
+          :color   :red})]
       (for [x (range 0 800 48)]
         (entity/create
-          :pos          {:x x
-                         :y 500}
-          :debug-rect {:width   48
-                       :height  48
-                       :color   :black})))))
+          :pos
+          {:x x
+           :y 500}
+          :debug-rect
+          {:width   48
+           :height  48
+           :color   :black})))))
 
 (defn create-canvas
-  [[width height] render-state]
-  (let [canvas (s/canvas 
+  [[width height] render-state input-state]
+  (let [set-key-state! (fn [state]
+                         (fn [e]
+                           (input/set-state! input-state (.getKeyCode e) state)))
+        canvas (s/canvas 
                  :size   [width :by height]
                  :paint  (fn [c g]
                            (let [render-state @render-state]
                              (when render-state
                                (doto g
                                  (.setBackground (s.col/color "white"))
-                                 (.clearRect 0 0 width height)
-                                 (.setColor (s.col/color "black")))
+                                 (.clearRect 0 0 width height))
                                (doseq [[_ {:keys [pos debug-rect]}] (:entities render-state)
                                        :when debug-rect]
                                  (doto g
                                    (.setColor (s.col/color (:color debug-rect)))
                                    (.fillRect (:x pos) (:y pos)
-                                              (:width debug-rect) (:height debug-rect))))))))]
+                                              (:width debug-rect) (:height debug-rect)))))))
+                 :listen  [:key-pressed   (set-key-state! :down)
+                           :key-released  (set-key-state! :up)])]
+    (.setFocusable canvas true)
     (s.time/timer
       (fn [_]
         (s/repaint! canvas))
       :delay 17)
     canvas))
 
+(defn input-direction-deltas
+  [input-state]
+  (let [dx  (+ (if (input/is-down? input-state :walk-left)
+                 -1 0)
+               (if (input/is-down? input-state :walk-right)
+                 1 0))
+        dy  (+ (if (input/is-down? input-state :walk-up)
+                 -1 0)
+               (if (input/is-down? input-state :walk-down)
+                 1 0))]
+    (if (and (not= dx 0) (not= dy 0))
+      [(* dx (Math/sqrt 1/2)) (* dy (Math/sqrt 1/2))]
+      [dx dy])))
+
 (defn move-player
-  [es]
-  (-> es
-    (entities/update-those-with
-      [:player :pos]
-      (fn [e]
-        (update-in e [:pos :x] inc)))))
+  [es input-state]
+  (let [[dx dy] (input-direction-deltas input-state)]
+    (-> es
+      (entities/update-those-with
+        [:keyboard-movement :pos]
+        (fn [e]
+          (let [speed (get-in e [:keyboard-movement :speed] 1)]
+            (-> e
+              (->/in [:pos]
+                     (update-in [:x] + (* speed dx))
+                     (update-in [:y] + (* speed dy))))))))))
 
 (defn run
-  [render-state]
-  (try
-    (loop [game-state {:entities (create-entities)}]
-      (let [new-state (-> game-state
-                        (->/in [:entities]
-                               move-player))]
-        (send render-state (constantly new-state))
-        (Thread/sleep 20)
-        (recur new-state)))
-    (catch Exception e
-      (.printStackTrace e))))
+  [render-state input-state]
+  (loop [game-state {:entities (create-entities)}]
+    (let [new-state (-> game-state
+                      (->/in [:entities]
+                             (move-player input-state)))]
+      (send render-state (constantly new-state))
+      (Thread/sleep 20)
+      (recur new-state))))
 
 (defn -main
   [& args]
   (let [render-state  (agent nil)
-        canvas        (create-canvas [800 600] render-state)]
-    (doto (Thread. #(run render-state))
+        input-state   (doto (input/create-state)
+                        (input/def!
+                          :walk-left  KeyEvent/VK_A
+                          :walk-right KeyEvent/VK_D))
+        canvas        (create-canvas [800 600] render-state input-state)]
+    (doto (Thread. #(run render-state input-state))
       .start)
     (s/invoke-later
       (-> (s/frame
