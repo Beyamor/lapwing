@@ -11,3 +11,7 @@
   (if (number? thing)
     thing
     (::id thing)))
+
+(defn has-components?
+  [e components]
+  (every? #(contains? e %) components))

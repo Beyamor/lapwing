@@ -15,6 +15,7 @@
       [(entity/create
          :pos        {:x 300
                       :y 300}
+         :player      true
          :debug-rect {:width   48
                       :height  48
                       :color   :red})]
@@ -49,12 +50,13 @@
       :delay 17)
     canvas))
 
-(defn update-positions
-  [entities]
-  (util/map-over-keys
-    (fn [e]
-      (update-in e [:pos :x] + 1))
-    entities))
+(defn move-player
+  [es]
+  (-> es
+    (entities/update-those-with
+      [:player :pos]
+      (fn [e]
+        (update-in e [:pos :x] inc)))))
 
 (defn run
   [render-state]
@@ -62,7 +64,7 @@
     (loop [game-state {:entities (create-entities)}]
       (let [new-state (-> game-state
                         (->/in [:entities]
-                               update-positions))]
+                               move-player))]
         (send render-state (constantly new-state))
         (Thread/sleep 20)
         (recur new-state)))
