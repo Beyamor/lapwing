@@ -18,12 +18,17 @@
          :pos
          {:x 300
           :y 300}
-         :keyboard-movement
+         :vel
+         {:x 0
+          :y 0}
+         :key-walker
          {:speed 7}
          :debug-rect
          {:width   48
           :height  48
-          :color   :red})]
+          :color   :red}
+         :gravity
+         10)]
       (for [x (range 0 800 48)]
         (entity/create
           :pos
@@ -62,32 +67,28 @@
       :delay 17)
     canvas))
 
-(defn input-direction-deltas
-  [input-state]
-  (let [dx  (+ (if (input/is-down? input-state :walk-left)
-                 -1 0)
-               (if (input/is-down? input-state :walk-right)
-                 1 0))
-        dy  (+ (if (input/is-down? input-state :walk-up)
-                 -1 0)
-               (if (input/is-down? input-state :walk-down)
-                 1 0))]
-    (if (and (not= dx 0) (not= dy 0))
-      [(* dx (Math/sqrt 1/2)) (* dy (Math/sqrt 1/2))]
-      [dx dy])))
-
-(defn move-player
+(defn updated-key-walkers
   [es input-state]
-  (let [[dx dy] (input-direction-deltas input-state)]
+  (let [dx (+ (if (input/is-down? input-state :walk-left)
+                -1 0)
+              (if (input/is-down? input-state :walk-right)
+                1 0))]
     (-> es
       (entities/update-those-with
-        [:keyboard-movement :pos]
-        (fn [e]
-          (let [speed (get-in e [:keyboard-movement :speed] 1)]
-            (-> e
-              (->/in [:pos]
-                     (update-in [:x] + (* speed dx))
-                     (update-in [:y] + (* speed dy))))))))))
+        [:key-walker :vel]
+        (fn [{{:keys [speed] :or {speed 1}} :key-walker :as e}]
+          (-> e
+            (assoc-in [:vel :x] (* speed dx))))))))
+
+(defn integrate-velocities
+  [es]
+  (-> es
+    (entities/update-those-with
+      [:pos :vel]
+      (fn [{{vx :x vy :y} :vel :as e}]
+        (-> e
+          (update-in [:pos :x] + vx)
+          (update-in [:pos :y] + vy))))))
 
 (defn run
   [render-state input-state]
@@ -95,7 +96,8 @@
     (let [input-state @input-state
           new-state   (-> game-state
                         (->/in [:entities]
-                               (move-player input-state)))]
+                               (updated-key-walkers input-state)
+                               integrate-velocities))]
       (send render-state (constantly new-state))
       (Thread/sleep 20)
       (recur new-state))))
@@ -106,9 +108,7 @@
         input-state   (doto (input/create-state)
                         (input/def!
                           :walk-left  [KeyEvent/VK_A KeyEvent/VK_KP_LEFT KeyEvent/VK_LEFT]
-                          :walk-right [KeyEvent/VK_D KeyEvent/VK_KP_RIGHT KeyEvent/VK_RIGHT]
-                          :walk-up    [KeyEvent/VK_W KeyEvent/VK_KP_UP KeyEvent/VK_UP]
-                          :walk-down  [KeyEvent/VK_S KeyEvent/VK_KP_UP KeyEvent/VK_DOWN]))
+                          :walk-right [KeyEvent/VK_D KeyEvent/VK_KP_RIGHT KeyEvent/VK_RIGHT]))
         canvas        (create-canvas [800 600] render-state input-state)]
     (doto (Thread. #(run render-state input-state))
       .start)
