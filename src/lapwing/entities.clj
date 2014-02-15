@@ -8,11 +8,24 @@
         (for [e initial-entities]
           [(entity/id e) e])))
 
+(defn those-with
+  [es components]
+  (select-keys es
+               (for [[id e] es
+                     :when (entity/has-components? e components)]
+                 id)))
+
 (defn update-those-with
   [es components f]
-  (util/map-over-keys
-    (fn [e]
-      (if (entity/has-components? e components)
-        (f e)
-        e))
-    es))
+  (->>
+    (those-with es components)
+    (util/map-over-keys f)
+    (merge es)))
+
+(defn any?
+  [es pred?]
+  (loop [es (vals es)]
+    (when (seq es)
+      (if (pred? (first es))
+        (first es)
+        (recur (rest es))))))

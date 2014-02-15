@@ -29,7 +29,9 @@
          true
          :hitbox
          {:width  48
-          :height 48})]
+          :height 48}
+         :player-state
+         :falling)]
       (for [x (range 0 800 48)]
         (entity/create
           :pos
@@ -39,7 +41,9 @@
           "black"
           :hitbox
           {:width   48
-           :height  48})))))
+           :height  48}
+          :solid
+          true)))))
 
 (defn create-canvas
   [[width height] render-state input-state]
@@ -102,6 +106,24 @@
           (->/when gravity
                    (update-in [:vel :y] inc)))))))
 
+(defn update-player-state
+  [es]
+  (-> es
+    (entities/update-those-with
+      [:player-state]
+      (fn [e]
+        (case (:player-state e)
+          :falling
+          (let [solids  (entities/those-with es [:solid])
+                check-e (update-in e [:pos :y] inc)]
+            (-> e
+              (->/when (entities/any? solids #(entity/collide? check-e %))
+                       (assoc :player-state :default)
+                       (assoc :gravity false)
+                       (assoc-in [:vel :y] 0))))
+
+          e)))))
+
 (defn run
   [render-state input-state]
   (loop [game-state {:entities (create-entities)}]
@@ -109,6 +131,7 @@
           new-state   (-> game-state
                         (->/in [:entities]
                                (updated-key-walkers input-state)
+                               update-player-state
                                apply-gravity
                                integrate-velocities))]
       (send render-state (constantly new-state))
