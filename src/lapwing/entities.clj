@@ -39,3 +39,13 @@
 (defn of-type
   [es type]
   (filter es #(= type (:type %))))
+
+(defn each
+  [es f]
+  (for [[id e] es]
+    (f e)))
+
+(defn update-only
+  [es who updater]
+  (let [id (entity/id who)]
+    (update-in es [id] updater)))

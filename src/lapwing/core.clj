@@ -1,5 +1,5 @@
 (ns lapwing.core
-  (:require [lapwing.util :as util]
+  (:require [lapwing.util :as util :refer [return]]
             [lapwing.image :as image]
             [lapwing.entities :as entities]
             [lapwing.entities.collisions :as collision]
@@ -125,34 +125,56 @@
                      (update-in [:x] + vx)
                      (update-in [:y] + vy)))))))))
 
+(def gravity {:y 1})
+
 (defn apply-gravity
   [es]
-  (-> es
-    (entities/update-those-with
-      [:vel :gravity]
-      (fn [{:keys [gravity] :as e}]
-        (-> e
-          (->/when gravity
-                   (update-in [:vel :y] inc)))))))
+  (util/flatten-1
+    (entities/each
+      (-> es
+        (entities/those-with [:vel :gravity])
+        (entities/filter :gravity))
+      (return [[:accelerate % gravity]]))))
 
 (defn update-fsm
   [es input-state]
-  (-> es
-    (entities/update-those-with
-      [:state-machine]
-      (fn [player]
-        (fsm/update player es input-state)))))
+  (util/flatten-1
+    (entities/each
+      (entities/those-with es [:state-machine])
+      (return [[:update-entity % (fn [e es input-state]
+                                   (fsm/update e es input-state))]]))))
 
 (defn run
   [render-state input-state]
   (loop [game-state {:entities (create-entities)}]
-    (let [input-state (input/update! input-state)
-          new-state   (-> game-state
-                        (->/in [:entities]
-                               (updated-key-walkers input-state)
-                               (update-fsm input-state)
-                               apply-gravity
-                               move-dynamic-bodies))]
+    (let [now (java.util.Date.)
+          input-state (input/update! input-state)
+          es          (-> (:entities game-state)
+                        (updated-key-walkers input-state))
+          statements  (reduce
+                        (fn [statements producer]
+                          (concat statements (producer)))
+                        [] [#(apply-gravity es)
+                            #(update-fsm es input-state)])
+          es          (reduce
+                        (fn [es statement]
+                          (case (first statement)
+                            :accelerate
+                            (let [[_ who {:keys [x y]}] statement]
+                              (entities/update-only es who
+                                                    #(-> %
+                                                       (->/when x
+                                                                (update-in [:vel :x] + x))
+                                                       (->/when y
+                                                                (update-in [:vel :y] + y)))))
+
+                            :update-entity
+                            (let [[_ who updater] statement]
+                              (entities/update-only es who
+                                                    #(updater % es input-state)))))
+                        es statements)
+          es          (move-dynamic-bodies es)
+          new-state   (assoc game-state :entities es)]
       (send render-state (constantly new-state))
       (Thread/sleep 20)
       (recur new-state))))
