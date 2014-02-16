@@ -21,7 +21,7 @@
     :debug-rect "black"
     :hitbox {:width   48
              :height  48}
-    :type :wall))
+    :solid? true))
 
 (defn create-entities
   []
@@ -37,12 +37,13 @@
          :gravity true
          :hitbox {:width  48
                   :height 48}
-         :type :player
          :state-machine {:name   :player
                          :state  :falling}
          :player-jumper {:initial-amount         10
                          :additional-amount      0.5
-                         :number-of-additionals  5})]
+                         :number-of-additionals  5}
+         :dynamic-body
+         {:stop-on-solids? true})]
       (for [x (range 0 800 48)]
         (create-wall x 500))
       (for [x (range 100 250 48)]
@@ -95,17 +96,17 @@
                      (assoc-in [:vel :x] (* speed dx)))))))))
 
 (defn maybe-move-step
-  [e dim step dir walls]
+  [e dim step dir solids]
   (if (pos? step)
     (let [e- (update-in e [:pos dim] dir)]
-      (if-not (collision/? e- walls)
+      (if-not (collision/? e- solids)
         [e- (dec step)]
         [(assoc-in e [:vel dim] 0) 0]))
     [e 0]))
 
 (defn move
   [es]
-  (let [walls (entities/of-type es :wall)]
+  (let [solids (entities/filter es :solid?)]
     (-> es
       (entities/update-those-with
         [:pos :vel]
@@ -114,8 +115,8 @@
                 y-dir (if (pos? vy) inc dec)]
             (loop [x-step (Math/floor (Math/abs vx)), y-step (Math/floor (Math/abs vy)), e e]
               (if (or (pos? x-step) (pos? y-step))
-                (let [[e x-step]  (maybe-move-step e :x x-step x-dir walls)
-                      [e y-step]  (maybe-move-step e :y y-step y-dir walls)]
+                (let [[e x-step]  (maybe-move-step e :x x-step x-dir solids)
+                      [e y-step]  (maybe-move-step e :y y-step y-dir solids)]
                   (recur x-step y-step e))
                 e))))))))
 

@@ -7,10 +7,10 @@
             [lonocloud.synthread :as ->]))
 
 (defn try-grabbing
-  [player wall walls]
+  [player solid solids]
   (-> player
-    (->/when (not (collision/above? wall walls))
-      (assoc-in [:pos :y] (entity/top wall))
+    (->/when (not (collision/above? solid solids))
+      (assoc-in [:pos :y] (entity/top solid))
       (fsm/change-state :grabbing))))
 
 (fsm/def player
@@ -18,19 +18,19 @@
          (begin [player]
                 (assoc player :gravity true))
          (update [player es input-state]
-                 (let [walls (entities/of-type es :wall)]
+                 (let [solids (entities/filter es :solid?)]
                    (-> player
                      (->/cond
-                       (collision/below? player walls)
+                       (collision/below? player solids)
                        (fsm/change-state :walking)
 
-                       (and (collision/left? player walls)
+                       (and (collision/left? player solids)
                             (input/is-down? input-state :move-left))
-                       (try-grabbing (collision/left player walls) walls)
+                       (try-grabbing (collision/left player solids) solids)
 
-                       (and (collision/right? player walls)
+                       (and (collision/right? player solids)
                             (input/is-down? input-state :move-right))
-                       (try-grabbing (collision/right player walls) walls)))))
+                       (try-grabbing (collision/right player solids) solids)))))
 
          walking
          (begin [player]
@@ -44,7 +44,7 @@
                      (input/was-pressed? input-state :jump)
                      (fsm/change-state :jumping)
 
-                     (not (collision/below? player (entities/of-type es :wall)))
+                     (not (collision/below? player (entities/filter es :solid?)))
                      (fsm/change-state :falling))))
 
          jumping
