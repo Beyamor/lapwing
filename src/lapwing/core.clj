@@ -43,7 +43,7 @@
                          :additional-amount      0.5
                          :number-of-additionals  5}
          :dynamic-body
-         {:stop-on-solids? true})]
+         {:stopped-by-solids? true})]
       (for [x (range 0 800 48)]
         (create-wall x 500))
       (for [x (range 100 250 48)]
@@ -104,21 +104,26 @@
         [(assoc-in e [:vel dim] 0) 0]))
     [e 0]))
 
-(defn move
+(defn move-dynamic-bodies
   [es]
   (let [solids (entities/filter es :solid?)]
     (-> es
       (entities/update-those-with
-        [:pos :vel]
-        (fn [{{vx :x vy :y} :vel :as e}]
-          (let [x-dir (if (pos? vx) inc dec)
-                y-dir (if (pos? vy) inc dec)]
-            (loop [x-step (Math/floor (Math/abs vx)), y-step (Math/floor (Math/abs vy)), e e]
-              (if (or (pos? x-step) (pos? y-step))
-                (let [[e x-step]  (maybe-move-step e :x x-step x-dir solids)
-                      [e y-step]  (maybe-move-step e :y y-step y-dir solids)]
-                  (recur x-step y-step e))
-                e))))))))
+        [:pos :vel :dynamic-body]
+        (fn [{{vx :x vy :y} :vel {:keys [stopped-by-solids?]} :dynamic-body :as e}]
+          (if stopped-by-solids?
+            (let [x-dir (if (pos? vx) inc dec)
+                  y-dir (if (pos? vy) inc dec)]
+              (loop [x-step (Math/floor (Math/abs vx)), y-step (Math/floor (Math/abs vy)), e e]
+                (if (or (pos? x-step) (pos? y-step))
+                  (let [[e x-step]  (maybe-move-step e :x x-step x-dir solids)
+                        [e y-step]  (maybe-move-step e :y y-step y-dir solids)]
+                    (recur x-step y-step e))
+                  e)))
+            (-> e
+              (->/in [:pos]
+                     (update-in [:x] + vx)
+                     (update-in [:y] + vy)))))))))
 
 (defn apply-gravity
   [es]
@@ -147,7 +152,7 @@
                                (updated-key-walkers input-state)
                                (update-fsm input-state)
                                apply-gravity
-                               move))]
+                               move-dynamic-bodies))]
       (send render-state (constantly new-state))
       (Thread/sleep 20)
       (recur new-state))))
