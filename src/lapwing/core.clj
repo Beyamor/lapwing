@@ -139,13 +139,12 @@
         (return [[:accelerate % gravity]])))))
 
 (defn update-fsm
-  [{:keys [entities]}]
+  [{:keys [entities] :as game-state}]
   (util/flatten-1
     (-> entities
       (entities/those-with [:state-machine])
       (entities/each
-        (return [[:update-entity % (fn [e game-state]
-                                     (fsm/update e game-state))]])))))
+        #(fsm/update % game-state)))))
 
 (def effectors
   {:move
@@ -163,25 +162,38 @@
                        (update :y y)))))))
    :accelerate
    (fn [{:keys [entities]} who {:keys [x y relative?]
-                  :or {relative? true}}]
+                                :or {relative? true}}]
      (let [update (if relative?
                     #(update-in %1 [:vel %2] + %3)
                     #(assoc-in %1 [:vel %2] %3))]
-     (-> entities
-       (entities/update-only
-         who
-         #(-> %
-            (->/when x
-                     (update :x x))
-            (->/when y
-                     (update :y y)))))))
+       (-> entities
+         (entities/update-only
+           who
+           #(-> %
+              (->/when x
+                       (update :x x))
+              (->/when y
+                       (update :y y)))))))
 
-   :update-entity
-   (fn [{:keys [entities] :as game-state} who updater]
+   :set
+   (fn [{:keys [entities]} who & specs]
      (-> entities
        (entities/update-only
          who
-         #(updater % game-state))))})
+         #(reduce
+            (fn [entity [path value]]
+              (assoc-in entity path value))
+            % (partition 2 specs)))))
+
+   :update
+   (fn [{:keys [entities]} who & specs]
+     (-> entities
+       (entities/update-only
+         who
+         #(reduce
+            (fn [entity [path f]]
+              (update-in entity path f))
+            % (partition 2 specs)))))})
 
 (defn effect-statements
   [game-state statements] 

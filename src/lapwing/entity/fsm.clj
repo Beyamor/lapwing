@@ -37,9 +37,9 @@
 (defn change-state
   [{:keys [state-machine] :as entity} new-state]
   (let [begin (:begin (fsm-spec (:name state-machine) new-state))]
-    (-> entity
-      (assoc-in [:state-machine :state] new-state)
-      begin)))
+    (concat
+      [[:set entity [:state-machine :state] new-state]]
+      (begin entity))))
 
 (defn update
   [{:keys [state-machine] :as entity} & args]
