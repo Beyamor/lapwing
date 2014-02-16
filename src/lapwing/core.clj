@@ -115,7 +115,7 @@
       [e])))
 
 (defn move-dynamic-bodies
-  [es]
+  [es _]
   (let [solids (entities/filter es :solid?)]
     (util/flatten-1
       (-> es
@@ -138,7 +138,7 @@
 (def gravity {:y 1})
 
 (defn apply-gravity
-  [es]
+  [es _]
   (util/flatten-1
     (entities/each
       (-> es
@@ -197,25 +197,30 @@
          who
          #(updater % es input-state))))})
 
+(defn effect-statements
+  [es input-state statements] 
+  (reduce
+    (fn [es [statement-type & data]]
+      (if-let [effector (get effectors statement-type)]
+        (apply effector es input-state data)
+        (throw (Exception. (str "No effector for " statement-type)))))
+    es statements))
+
 (defn run
   [render-state input-state]
   (loop [game-state {:entities (create-entities)}]
     (let [now (java.util.Date.)
           input-state (input/update! input-state)
           es          (:entities game-state)
-          statements  (reduce
-                        (fn [statements producer]
-                          (concat statements (producer)))
-                        [] [#(updated-key-walkers es input-state)
-                            #(apply-gravity es)
-                            #(update-fsm es input-state)
-                            #(move-dynamic-bodies es)])
           es          (reduce
-                        (fn [es [statement-type & data]]
-                          (if-let [effector (get effectors statement-type)]
-                            (apply effector es input-state data)
-                            (throw (Exception. (str "No effector for " statement-type)))))
-                        es statements)
+                        (fn [es producer]
+                          (effect-statements es input-state
+                                             (producer es input-state)))
+                        es
+                        [updated-key-walkers
+                         apply-gravity
+                         update-fsm
+                         move-dynamic-bodies])
           new-state   (assoc game-state :entities es)]
       (send render-state (constantly new-state))
       (Thread/sleep 20)
