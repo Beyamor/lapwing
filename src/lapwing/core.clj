@@ -96,15 +96,6 @@
             [[:accelerate e {:x (* speed dx)
                              :relative? false}]]))))))
 
-(defn maybe-move-step
-  [e dim step dir solids]
-  (if (pos? step)
-    (let [e- (update-in e [:pos dim] dir)]
-      (if-not (collision/? e- solids)
-        [e- (dec step)]
-        [(assoc-in e [:vel dim] 0) 0]))
-    [e 0]))
-
 (defn move-along-dimension
   [e dim distance dir solids]
   (loop [distance distance, e e]
