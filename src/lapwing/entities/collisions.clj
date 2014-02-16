@@ -10,7 +10,23 @@
     #(and (not (entity/= e %))
           (entity/collide? e %))))
 
-(defn below?
+(defn below
   [e es]
   (? (update-in e [:pos :y] inc)
      es))
+
+(def below? below)
+
+(defn left
+  [e es]
+  (? (update-in e [:pos :x] dec)
+     es))
+
+(def left? left)
+
+(defn right
+  [e es]
+  (? (update-in e [:pos :x] inc)
+     es))
+
+(def right? right)

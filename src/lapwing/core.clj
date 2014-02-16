@@ -32,7 +32,7 @@
                :y 300}
          :vel {:x 0
                :y 0}
-         :key-walker {:speed 7}
+         :key-walker {:speed 7, :can-walk true}
          :debug-rect "red"
          :gravity true
          :hitbox {:width  48
@@ -82,16 +82,17 @@
 
 (defn updated-key-walkers
   [es input-state]
-  (let [dx (+ (if (input/is-down? input-state :walk-left)
+  (let [dx (+ (if (input/is-down? input-state :move-left)
                 -1 0)
-              (if (input/is-down? input-state :walk-right)
+              (if (input/is-down? input-state :move-right)
                 1 0))]
     (-> es
       (entities/update-those-with
         [:key-walker :vel]
-        (fn [{{:keys [speed] :or {speed 1}} :key-walker :as e}]
+        (fn [{{:keys [speed can-walk] :or {speed 1}} :key-walker :as e}]
           (-> e
-            (assoc-in [:vel :x] (* speed dx))))))))
+            (->/when can-walk
+                     (assoc-in [:vel :x] (* speed dx)))))))))
 
 (defn maybe-move-step
   [e dim step dir walls]
@@ -156,8 +157,9 @@
         input-state   (doto (input/create-state)
                         (input/def!
                           :jump       KeyEvent/VK_X
-                          :walk-left  [KeyEvent/VK_KP_LEFT  KeyEvent/VK_LEFT]
-                          :walk-right [KeyEvent/VK_KP_RIGHT KeyEvent/VK_RIGHT]))
+                          :move-left  [KeyEvent/VK_KP_LEFT  KeyEvent/VK_LEFT]
+                          :move-right [KeyEvent/VK_KP_RIGHT KeyEvent/VK_RIGHT]
+                          :move-down  [KeyEvent/VK_KP_DOWN  KeyEvent/VK_DOWN]))
         canvas        (create-canvas [800 600] render-state input-state)]
     (doto (Thread. #(run render-state input-state))
       .start)

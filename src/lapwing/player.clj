@@ -6,6 +6,12 @@
             [lapwing.entity.fsm :as fsm]
             [lonocloud.synthread :as ->]))
 
+(defn grab
+  [player wall]
+  (-> player
+    (assoc-in [:pos :y] (entity/top wall))
+    (fsm/change-state :grabbing)))
+
 (fsm/def player
          falling
          (begin [player]
@@ -15,12 +21,21 @@
                    (-> player
                      (->/cond
                        (collision/below? player walls)
-                       (fsm/change-state :walking)))))
+                       (fsm/change-state :walking)
+
+                       (and (collision/left? player walls)
+                            (input/is-down? input-state :move-left))
+                       (grab (collision/left player walls))
+
+                       (and (collision/right? player walls)
+                            (input/is-down? input-state :move-right))
+                       (grab (collision/right player walls))))))
 
          walking
          (begin [player]
                 (-> player
                   (assoc :gravity false)
+                  (assoc-in [:key-walker :can-walk] true)
                   (assoc-in [:vel :y] 0)))
          (update [player es input-state]
                  (-> player
@@ -35,6 +50,7 @@
          (begin [{{:keys [initial-amount]} :player-jumper :as player}]
                 (-> player
                   (update-in [:vel :y] - initial-amount)
+                  (assoc-in [:key-walker :can-walk] true)
                   (assoc-in [:player-jumper :additionals-applied] 0)))
          (update [{{:keys [additionals-applied number-of-additionals additional-amount]} :player-jumper
                    :as player}
@@ -50,7 +66,13 @@
          grabbing
          (begin [player]
                 (-> player
+                  (assoc :gravity false)
+                  (assoc-in [:key-walker :can-walk] false)
                   (->/in [:vel]
                          (assoc :x 0 :y 0))))
          (update [player es input-state]
-                 player))
+                 (-> player
+                   (->/when (input/was-pressed? input-state :jump)
+                            (->/if (input/is-down? input-state :move-down)
+                                   (fsm/change-state :falling)
+                                   (fsm/change-state :jumping))))))
