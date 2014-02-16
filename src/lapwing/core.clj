@@ -144,6 +144,25 @@
       (return [[:update-entity % (fn [e es input-state]
                                    (fsm/update e es input-state))]]))))
 
+(def effectors
+  {:accelerate
+  (fn [es _ who {:keys [x y]}]
+    (-> es
+      (entities/update-only
+        who
+        #(-> %
+           (->/when x
+                    (update-in [:vel :x] + x))
+           (->/when y
+                    (update-in [:vel :y] + y))))))
+
+   :update-entity
+   (fn [es input-state who updater]
+     (-> es
+       (entities/update-only
+         who
+         #(updater % es input-state))))})
+
 (defn run
   [render-state input-state]
   (loop [game-state {:entities (create-entities)}]
@@ -157,21 +176,9 @@
                         [] [#(apply-gravity es)
                             #(update-fsm es input-state)])
           es          (reduce
-                        (fn [es statement]
-                          (case (first statement)
-                            :accelerate
-                            (let [[_ who {:keys [x y]}] statement]
-                              (entities/update-only es who
-                                                    #(-> %
-                                                       (->/when x
-                                                                (update-in [:vel :x] + x))
-                                                       (->/when y
-                                                                (update-in [:vel :y] + y)))))
-
-                            :update-entity
-                            (let [[_ who updater] statement]
-                              (entities/update-only es who
-                                                    #(updater % es input-state)))))
+                        (fn [es [statement-type & data]]
+                          (if-let [effector (get effectors statement-type)]
+                            (apply effector es input-state data)))
                         es statements)
           es          (move-dynamic-bodies es)
           new-state   (assoc game-state :entities es)]
