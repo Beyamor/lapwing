@@ -2,6 +2,7 @@
   (:require [lapwing.util :as util]
             [lapwing.image :as image]
             [lapwing.entities :as entities]
+            [lapwing.entities.collisions :as collision]
             [lapwing.entity :as entity]
             [lapwing.entity.fsm :as fsm]
             [lapwing.input :as input]
@@ -88,17 +89,11 @@
           (-> e
             (assoc-in [:vel :x] (* speed dx))))))))
 
-(defn collides-with-other-entity?
-  [e es]
-  (entities/any? es
-                 #(and (not (entity/= e %))
-                       (entity/collide? e %))))
-
 (defn maybe-move-step
   [e dim step dir solids]
   (if (pos? step)
     (let [e- (update-in e [:pos dim] dir)]
-      (if-not (collides-with-other-entity? e- solids)
+      (if-not (collision/? e- solids)
         [e- (dec step)]
         [(assoc-in e [:vel dim] 0) 0]))
     [e 0]))

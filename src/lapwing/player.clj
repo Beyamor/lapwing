@@ -1,5 +1,6 @@
 (ns lapwing.player
   (:require [lapwing.entities :as entities]
+            [lapwing.entities.collisions :as collision]
             [lapwing.entity :as entity]
             [lapwing.input :as input]
             [lapwing.entity.fsm :as fsm]
@@ -15,7 +16,7 @@
                                 (entities/filter #(not (entity/= player %))))
                        check  (update-in player [:pos :y] inc)]
                    (-> player
-                     (->/when (entities/any? solids #(entity/collide? check %))
+                     (->/when (collision/below? check solids)
                               (fsm/change-state :walking)))))
 
          walking
@@ -29,11 +30,7 @@
                      (input/was-pressed? input-state :jump)
                      (fsm/change-state :jumping)
 
-                     (not (entities/any?
-                            (entities/those-with es [:solid])
-                            #(and (not (entity/= player %))
-                                  (entity/collide? %
-                                                   (update-in player [:pos :y] inc)))))
+                     (not (collision/below? player (entities/those-with es [:solid])))
                      (fsm/change-state :falling))))
 
          jumping
