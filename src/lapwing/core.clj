@@ -12,6 +12,16 @@
             [lonocloud.synthread :as ->])
   (:import java.awt.event.KeyEvent))
 
+(defn create-wall
+  [x y]
+(entity/create
+          :pos {:x x
+                :y y}
+          :debug-rect "black"
+          :hitbox {:width   48
+                   :height  48}
+          :solid true))
+
 (defn create-entities
   []
   (entities/create
@@ -33,13 +43,9 @@
                          :additional-amount      0.5
                          :number-of-additionals  5})]
       (for [x (range 0 800 48)]
-        (entity/create
-          :pos {:x x
-                :y 500}
-          :debug-rect "black"
-          :hitbox {:width   48
-                   :height  48}
-          :solid true)))))
+        (create-wall x 500))
+      (for [x (range 100 250 48)]
+        (create-wall x 400)))))
 
 (defn create-canvas
   [[width height] render-state input-state]
