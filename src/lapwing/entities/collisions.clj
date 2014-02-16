@@ -30,3 +30,10 @@
      es))
 
 (def right? right)
+
+(defn above
+  [e es]
+  (? (update-in e [:pos :y] dec)
+     es))
+
+(def above? above)

@@ -6,11 +6,12 @@
             [lapwing.entity.fsm :as fsm]
             [lonocloud.synthread :as ->]))
 
-(defn grab
-  [player wall]
+(defn try-grabbing
+  [player wall walls]
   (-> player
-    (assoc-in [:pos :y] (entity/top wall))
-    (fsm/change-state :grabbing)))
+    (->/when (not (collision/above? wall walls))
+      (assoc-in [:pos :y] (entity/top wall))
+      (fsm/change-state :grabbing))))
 
 (fsm/def player
          falling
@@ -25,11 +26,11 @@
 
                        (and (collision/left? player walls)
                             (input/is-down? input-state :move-left))
-                       (grab (collision/left player walls))
+                       (try-grabbing (collision/left player walls) walls)
 
                        (and (collision/right? player walls)
                             (input/is-down? input-state :move-right))
-                       (grab (collision/right player walls))))))
+                       (try-grabbing (collision/right player walls) walls)))))
 
          walking
          (begin [player]
