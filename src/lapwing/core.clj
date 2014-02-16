@@ -94,6 +94,15 @@
                  #(and (not (entity/= e %))
                        (entity/collide? e %))))
 
+(defn maybe-move-step
+  [e dim step dir solids]
+  (if (pos? step)
+    (let [e- (update-in e [:pos dim] dir)]
+      (if-not (collides-with-other-entity? e- solids)
+        [e- (dec step)]
+        [(assoc-in e [:vel dim] 0) 0]))
+    [e 0]))
+
 (defn move
   [es]
   (let [solids (entities/those-with es [:pos :solid])]
@@ -105,16 +114,8 @@
                 y-dir (if (pos? vy) inc dec)]
             (loop [x-step (Math/floor (Math/abs vx)), y-step (Math/floor (Math/abs vy)), e e]
               (if (or (pos? x-step) (pos? y-step))
-                (let [e-          (update-in e [:pos :x] x-dir)
-                      [e x-step]  (if (and (pos? x-step)
-                                           (not (collides-with-other-entity? e- solids)))
-                                    [e- (dec x-step)]
-                                    [e 0])
-                      e-          (update-in e [:pos :y] y-dir)
-                      [e y-step]  (if (and (pos? y-step)
-                                           (not (collides-with-other-entity? e- solids)))
-                                    [e- (dec y-step)]
-                                    [e 0])]
+                (let [[e x-step]  (maybe-move-step e :x x-step x-dir solids)
+                      [e y-step]  (maybe-move-step e :y y-step y-dir solids)]
                   (recur x-step y-step e))
                 e))))))))
 
