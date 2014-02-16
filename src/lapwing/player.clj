@@ -11,13 +11,11 @@
          (begin [player]
                 (assoc player :gravity true))
          (update [player es input-state]
-                 (let [solids (-> es
-                                (entities/those-with [:solid])
-                                (entities/filter #(not (entity/= player %))))
-                       check  (update-in player [:pos :y] inc)]
+                 (let [walls (entities/of-type es :wall)]
                    (-> player
-                     (->/when (collision/below? check solids)
-                              (fsm/change-state :walking)))))
+                     (->/cond
+                       (collision/below? player walls)
+                       (fsm/change-state :walking)))))
 
          walking
          (begin [player]
@@ -30,7 +28,7 @@
                      (input/was-pressed? input-state :jump)
                      (fsm/change-state :jumping)
 
-                     (not (collision/below? player (entities/those-with es [:solid])))
+                     (not (collision/below? player (entities/of-type es :wall)))
                      (fsm/change-state :falling))))
 
          jumping
@@ -47,4 +45,12 @@
                           (fsm/change-state :falling)
                           (->
                             (update-in [:vel :y] - additional-amount)
-                            (update-in [:player-jumper :additionals-applied] inc))))))
+                            (update-in [:player-jumper :additionals-applied] inc)))))
+
+         grabbing
+         (begin [player]
+                (-> player
+                  (->/in [:vel]
+                         (assoc :x 0 :y 0))))
+         (update [player es input-state]
+                 player))

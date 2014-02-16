@@ -35,3 +35,7 @@
       (if (pred? (first es))
         (first es)
         (recur (rest es))))))
+
+(defn of-type
+  [es type]
+  (filter es #(= type (:type %))))
