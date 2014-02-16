@@ -1,6 +1,7 @@
 (ns lapwing.entity
   (:require [lapwing.util :as util]
-            [lonocloud.synthread :as ->]))
+            [lonocloud.synthread :as ->])
+  (:refer-clojure :exclude [=]))
 
 (defn create
   [& {:as components}]
@@ -32,7 +33,8 @@
   (-> e
     left
     (->/when (has-component? e :hitbox)
-             (+ (-> e :hitbox :width)))))
+             (+ (-> e :hitbox :width))
+             (- 0.0001))))
 
 (defn top
   [e]
@@ -45,7 +47,8 @@
   (-> e
     top
     (->/when (has-component? e :hitbox)
-             (+ (-> e :hitbox :height)))))
+             (+ (-> e :hitbox :height))
+             (- 0.0001))))
 
 (defn collide?
   [e1 e2]
@@ -54,3 +57,7 @@
          (> (left e2) (right e1))
          (< (bottom e2) (top e1))
          (> (top e2) (bottom e1)))))
+
+(defn =
+  [e1 e2]
+  (clojure.core/= (id e1) (id e2))) 

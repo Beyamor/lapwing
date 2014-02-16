@@ -26,6 +26,7 @@
          :gravity true
          :hitbox {:width  48
                   :height 48}
+         :solid true
          :state-machine {:name   :player
                          :state  :falling}
          :player-jumper {:initial-amount         10
@@ -81,15 +82,35 @@
           (-> e
             (assoc-in [:vel :x] (* speed dx))))))))
 
-(defn integrate-velocities
+(defn collides-with-other-entity?
+  [e es]
+  (entities/any? es
+                 #(and (not (entity/= e %))
+                       (entity/collide? e %))))
+
+(defn move
   [es]
-  (-> es
-    (entities/update-those-with
-      [:pos :vel]
-      (fn [{{vx :x vy :y} :vel :as e}]
-        (-> e
-          (update-in [:pos :x] + vx)
-          (update-in [:pos :y] + vy))))))
+  (let [solids (entities/those-with es [:pos :solid])]
+    (-> es
+      (entities/update-those-with
+        [:pos :vel]
+        (fn [{{vx :x vy :y} :vel :as e}]
+          (let [x-dir (if (pos? vx) inc dec)
+                y-dir (if (pos? vy) inc dec)]
+            (loop [x-step (Math/floor (Math/abs vx)), y-step (Math/floor (Math/abs vy)), e e]
+              (if (or (pos? x-step) (pos? y-step))
+                (let [e-          (update-in e [:pos :x] x-dir)
+                      [e x-step]  (if (and (pos? x-step)
+                                           (not (collides-with-other-entity? e- solids)))
+                                    [e- (dec x-step)]
+                                    [e 0])
+                      e-          (update-in e [:pos :y] y-dir)
+                      [e y-step]  (if (and (pos? y-step)
+                                           (not (collides-with-other-entity? e- solids)))
+                                    [e- (dec y-step)]
+                                    [e 0])]
+                  (recur x-step y-step e))
+                e))))))))
 
 (defn apply-gravity
   [es]
@@ -118,7 +139,7 @@
                                (updated-key-walkers input-state)
                                (update-fsm input-state)
                                apply-gravity
-                               integrate-velocities))]
+                               move))]
       (send render-state (constantly new-state))
       (Thread/sleep 20)
       (recur new-state))))

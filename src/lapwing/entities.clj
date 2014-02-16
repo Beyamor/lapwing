@@ -1,6 +1,7 @@
 (ns lapwing.entities
   (:require [lapwing.entity :as entity]
-            [lapwing.util :as util]))
+            [lapwing.util :as util])
+  (:refer-clojure :exclude [filter]))
 
 (defn create
   [initial-entities]
@@ -8,12 +9,17 @@
         (for [e initial-entities]
           [(entity/id e) e])))
 
-(defn those-with
-  [es components]
+(defn filter
+  [es pred?]
   (select-keys es
                (for [[id e] es
-                     :when (entity/has-components? e components)]
+                     :when (pred? e)]
                  id)))
+
+(defn those-with
+  [es components]
+  (filter es
+          #(entity/has-components? % components)))
 
 (defn update-those-with
   [es components f]

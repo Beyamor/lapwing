@@ -10,7 +10,9 @@
          (begin [player]
                 (assoc player :gravity true))
          (update [player es input-state]
-                 (let [solids (entities/those-with es [:solid])
+                 (let [solids (-> es
+                                (entities/those-with [:solid])
+                                (entities/filter #(not (entity/= player %))))
                        check  (update-in player [:pos :y] inc)]
                    (-> player
                      (->/when (entities/any? solids #(entity/collide? check %))
