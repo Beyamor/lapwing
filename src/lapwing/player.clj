@@ -25,8 +25,16 @@
                   (assoc-in [:vel :y] 0)))
          (update [player es input-state]
                  (-> player
-                   (->/when (input/was-pressed? input-state :jump)
-                            (fsm/change-state :jumping))))
+                   (->/cond
+                     (input/was-pressed? input-state :jump)
+                     (fsm/change-state :jumping)
+
+                     (not (entities/any?
+                            (entities/those-with es [:solid])
+                            #(and (not (entity/= player %))
+                                  (entity/collide? %
+                                                   (update-in player [:pos :y] inc)))))
+                     (fsm/change-state :falling))))
 
          jumping
          (begin [{{:keys [initial-amount]} :player-jumper :as player}]
