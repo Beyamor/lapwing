@@ -3,12 +3,14 @@
             [lapwing.entity :as entity]
             [lonocloud.synthread :as ->]))
 
-(defn ?
+(defn check
   [e es]
   (entities/any?
     es
     #(and (not (entity/= e %))
           (entity/collide? e %))))
+
+(def ? check)
 
 (defn below
   [e es]

@@ -104,26 +104,36 @@
         [(assoc-in e [:vel dim] 0) 0]))
     [e 0]))
 
+(defn move-along-dimension
+  [e dim distance dir solids]
+  (loop [distance distance, e e]
+    (if (pos? distance)
+      (let [e- (update-in e [:pos dim] dir)]
+        (if-let [collison (collision/check e- solids)]
+          [e collison]
+          (recur (dec distance) e-)))
+      [e])))
+
 (defn move-dynamic-bodies
   [es]
   (let [solids (entities/filter es :solid?)]
-    (-> es
-      (entities/update-those-with
-        [:pos :vel :dynamic-body]
-        (fn [{{vx :x vy :y} :vel {:keys [stopped-by-solids?]} :dynamic-body :as e}]
-          (if stopped-by-solids?
-            (let [x-dir (if (pos? vx) inc dec)
-                  y-dir (if (pos? vy) inc dec)]
-              (loop [x-step (Math/floor (Math/abs vx)), y-step (Math/floor (Math/abs vy)), e e]
-                (if (or (pos? x-step) (pos? y-step))
-                  (let [[e x-step]  (maybe-move-step e :x x-step x-dir solids)
-                        [e y-step]  (maybe-move-step e :y y-step y-dir solids)]
-                    (recur x-step y-step e))
-                  e)))
-            (-> e
-              (->/in [:pos]
-                     (update-in [:x] + vx)
-                     (update-in [:y] + vy)))))))))
+    (util/flatten-1
+      (-> es
+        (entities/those-with [:pos :vel :dynamic-body])
+        (entities/each
+          (fn [{{vx :x vy :y} :vel {:keys [stopped-by-solids?]} :dynamic-body :as e}]
+            (if stopped-by-solids?
+              (let [x-dir   (if (pos? vx) inc dec)
+                    y-dir   (if (pos? vy) inc dec)
+                    x-step  (Math/floor (Math/abs vx))
+                    y-step  (Math/floor (Math/abs vy))]
+                (when (or (pos? x-step) (pos? y-step))
+                  (let [[e x-collision] (move-along-dimension e :x x-step x-dir solids)
+                        [e y-collision] (move-along-dimension e :y y-step y-dir solids)]
+                    [[:move e (:pos e)]])))
+              [[:move e {:x vx
+                         :y vy
+                         :relative? true}]])))))))
 
 (def gravity {:y 1})
 
@@ -145,16 +155,29 @@
                                    (fsm/update e es input-state))]]))))
 
 (def effectors
-  {:accelerate
-  (fn [es _ who {:keys [x y]}]
-    (-> es
-      (entities/update-only
-        who
-        #(-> %
-           (->/when x
-                    (update-in [:vel :x] + x))
-           (->/when y
-                    (update-in [:vel :y] + y))))))
+  {:move
+   (fn [es _ who {:keys [x y relative?]}]
+     (let [update (if relative?
+                    #(update-in %1 [:pos %2] %3)
+                    #(assoc-in %1 [:pos %2] %3))]
+       (-> es
+         (entities/update-only
+           who
+           #(-> %
+              (->/when x
+                       (update :x x))
+              (->/when y
+                       (update :y y)))))))
+   :accelerate
+   (fn [es _ who {:keys [x y]}]
+     (-> es
+       (entities/update-only
+         who
+         #(-> %
+            (->/when x
+                     (update-in [:vel :x] + x))
+            (->/when y
+                     (update-in [:vel :y] + y))))))
 
    :set-velocity
    (fn [es _ who {:keys [x y]}]
@@ -185,14 +208,14 @@
                           (concat statements (producer)))
                         [] [#(updated-key-walkers es input-state)
                             #(apply-gravity es)
-                            #(update-fsm es input-state)])
+                            #(update-fsm es input-state)
+                            #(move-dynamic-bodies es)])
           es          (reduce
                         (fn [es [statement-type & data]]
                           (if-let [effector (get effectors statement-type)]
                             (apply effector es input-state data)
                             (throw (Exception. (str "No effector for " statement-type)))))
                         es statements)
-          es          (move-dynamic-bodies es)
           new-state   (assoc game-state :entities es)]
       (send render-state (constantly new-state))
       (Thread/sleep 20)
