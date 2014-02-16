@@ -22,17 +22,20 @@
          (begin [player]
                 (assoc player :gravity true))
          (update [player es input-state]
-                 (let [solids (entities/filter es :solid?)]
+                 (let [falling-down?  (pos? (-> player :vel :y))
+                       solids         (entities/filter es :solid?)]
                    (-> player
                      (->/cond
                        (collision/below? player solids)
                        (fsm/change-state :walking)
 
-                       (and (collision/left? player solids)
+                       (and falling-down?
+                            (collision/left? player solids)
                             (input/is-down? input-state :move-left))
                        (try-grabbing (collision/left player solids) solids)
 
-                       (and (collision/right? player solids)
+                       (and falling-down?
+                            (collision/right? player solids)
                             (input/is-down? input-state :move-right))
                        (try-grabbing (collision/right player solids) solids)))))
 
