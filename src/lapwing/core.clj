@@ -93,7 +93,8 @@
         (entities/filter #(-> % :key-walker :can-walk?))
         (entities/each
           (fn [{{:keys [speed]} :key-walker :as e}]
-            [[:set-velocity e {:x (* speed dx)}]]))))))
+            [[:accelerate e {:x (* speed dx)
+                             :relative? false}]]))))))
 
 (defn maybe-move-step
   [e dim step dir solids]
@@ -158,7 +159,7 @@
   {:move
    (fn [es _ who {:keys [x y relative?]}]
      (let [update (if relative?
-                    #(update-in %1 [:pos %2] %3)
+                    #(update-in %1 [:pos %2] + %3)
                     #(assoc-in %1 [:pos %2] %3))]
        (-> es
          (entities/update-only
@@ -169,26 +170,19 @@
               (->/when y
                        (update :y y)))))))
    :accelerate
-   (fn [es _ who {:keys [x y]}]
+   (fn [es _ who {:keys [x y relative?]
+                  :or {relative? true}}]
+     (let [update (if relative?
+                    #(update-in %1 [:vel %2] + %3)
+                    #(assoc-in %1 [:vel %2] %3))]
      (-> es
        (entities/update-only
          who
          #(-> %
             (->/when x
-                     (update-in [:vel :x] + x))
+                     (update :x x))
             (->/when y
-                     (update-in [:vel :y] + y))))))
-
-   :set-velocity
-   (fn [es _ who {:keys [x y]}]
-     (-> es
-       (entities/update-only
-         who
-         #(-> %
-            (->/when x
-                     (assoc-in [:vel :x] x))
-            (->/when y
-                     (assoc-in [:vel :y] y))))))
+                     (update :y y)))))))
 
    :update-entity
    (fn [es input-state who updater]
