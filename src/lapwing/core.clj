@@ -122,7 +122,12 @@
                 (when (or (pos? x-step) (pos? y-step))
                   (let [[e x-collision] (move-along-dimension e :x x-step x-dir solids)
                         [e y-collision] (move-along-dimension e :y y-step y-dir solids)]
-                    [[:move e (:pos e)]])))
+                    (concat
+                      [[:move e (:pos e)]]
+                      (when x-collision
+                        [[:set e [:vel :x] 0]])
+                      (when y-collision
+                        [[:set e [:vel :y] 0]])))))
               [[:move e {:x vx
                          :y vy
                          :relative? true}]])))))))

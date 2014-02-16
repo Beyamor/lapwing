@@ -58,9 +58,10 @@
                   [:player-jumper :additionals-applied] 0]])
          (update [{{:keys [additionals-applied number-of-additionals additional-amount]} :player-jumper
                    :as player}
-                  {:keys [input-state]}]
+                  {:keys [input-state entities]}]
                  (if (or (>= additionals-applied number-of-additionals)
-                         (input/was-released? input-state :jump))
+                         (input/was-released? input-state :jump)
+                         (collision/above? player (entities/filter entities :solid?)))
                    (fsm/change-state player :falling)
                    [[:update player [:vel :y] #(- % additional-amount)
                      [:player-jumper :additionals-applied] inc]]))
