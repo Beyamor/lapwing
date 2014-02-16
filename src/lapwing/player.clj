@@ -8,10 +8,14 @@
 
 (defn try-grabbing
   [player solid solids]
-  (-> player
-    (->/when (not (collision/above? solid solids))
-      (assoc-in [:pos :y] (entity/top solid))
-      (fsm/change-state :grabbing))))
+  (let [top-difference (- (entity/top solid)
+                          (entity/top player))]
+    (-> player
+      (->/when (and (>= top-difference -10)
+                    (<= top-difference 5)
+                    (not (collision/above? solid solids)))
+               (assoc-in [:pos :y] (entity/top solid))
+               (fsm/change-state :grabbing)))))
 
 (fsm/def player
          falling
