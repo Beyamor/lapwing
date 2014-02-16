@@ -82,13 +82,13 @@
     canvas))
 
 (defn updated-key-walkers
-  [es input-state]
+  [{:keys [entities input-state]}]
   (let [dx (+ (if (input/is-down? input-state :move-left)
                 -1 0)
               (if (input/is-down? input-state :move-right)
                 1 0))]
     (util/flatten-1
-      (-> es
+      (-> entities
         (entities/those-with [:key-walker :vel])
         (entities/filter #(-> % :key-walker :can-walk?))
         (entities/each
@@ -107,10 +107,10 @@
       [e])))
 
 (defn move-dynamic-bodies
-  [es _]
-  (let [solids (entities/filter es :solid?)]
+  [{:keys [entities]}]
+  (let [solids (entities/filter entities :solid?)]
     (util/flatten-1
-      (-> es
+      (-> entities
         (entities/those-with [:pos :vel :dynamic-body])
         (entities/each
           (fn [{{vx :x vy :y} :vel {:keys [stopped-by-solids?]} :dynamic-body :as e}]
@@ -130,29 +130,30 @@
 (def gravity {:y 1})
 
 (defn apply-gravity
-  [es _]
+  [{:keys [entities]}]
   (util/flatten-1
-    (entities/each
-      (-> es
-        (entities/those-with [:vel :gravity])
-        (entities/filter :gravity))
-      (return [[:accelerate % gravity]]))))
+    (-> entities
+      (entities/those-with [:vel :gravity])
+      (entities/filter :gravity)
+      (entities/each
+        (return [[:accelerate % gravity]])))))
 
 (defn update-fsm
-  [es input-state]
+  [{:keys [entities]}]
   (util/flatten-1
-    (entities/each
-      (entities/those-with es [:state-machine])
-      (return [[:update-entity % (fn [e es input-state]
-                                   (fsm/update e es input-state))]]))))
+    (-> entities
+      (entities/those-with [:state-machine])
+      (entities/each
+        (return [[:update-entity % (fn [e game-state]
+                                     (fsm/update e game-state))]])))))
 
 (def effectors
   {:move
-   (fn [es _ who {:keys [x y relative?]}]
+   (fn [{:keys [entities]} who {:keys [x y relative?]}]
      (let [update (if relative?
                     #(update-in %1 [:pos %2] + %3)
                     #(assoc-in %1 [:pos %2] %3))]
-       (-> es
+       (-> entities
          (entities/update-only
            who
            #(-> %
@@ -161,12 +162,12 @@
               (->/when y
                        (update :y y)))))))
    :accelerate
-   (fn [es _ who {:keys [x y relative?]
+   (fn [{:keys [entities]} who {:keys [x y relative?]
                   :or {relative? true}}]
      (let [update (if relative?
                     #(update-in %1 [:vel %2] + %3)
                     #(assoc-in %1 [:vel %2] %3))]
-     (-> es
+     (-> entities
        (entities/update-only
          who
          #(-> %
@@ -176,20 +177,21 @@
                      (update :y y)))))))
 
    :update-entity
-   (fn [es input-state who updater]
-     (-> es
+   (fn [{:keys [entities] :as game-state} who updater]
+     (-> entities
        (entities/update-only
          who
-         #(updater % es input-state))))})
+         #(updater % game-state))))})
 
 (defn effect-statements
-  [es input-state statements] 
-  (reduce
-    (fn [es [statement-type & data]]
-      (if-let [effector (get effectors statement-type)]
-        (apply effector es input-state data)
-        (throw (Exception. (str "No effector for " statement-type)))))
-    es statements))
+  [game-state statements] 
+  (:entities
+    (reduce
+      (fn [game-state [statement-type & data]]
+        (if-let [effector (get effectors statement-type)]
+          (assoc game-state :entities (apply effector game-state data))
+          (throw (Exception. (str "No effector for " statement-type)))))
+      game-state statements)))
 
 (defn run
   [render-state input-state]
@@ -198,9 +200,10 @@
           input-state (input/update! input-state)
           es          (:entities game-state)
           es          (reduce
-                        (fn [es producer]
-                          (effect-statements es input-state
-                                             (producer es input-state)))
+                        (fn [es produce]
+                          (let [game-state {:entities es :input-state input-state}]
+                            (effect-statements game-state
+                                               (produce game-state))))
                         es
                         [updated-key-walkers
                          apply-gravity

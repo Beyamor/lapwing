@@ -21,9 +21,9 @@
          falling
          (begin [player]
                 (assoc player :gravity true))
-         (update [player es input-state]
+         (update [player {:keys [entities input-state]}]
                  (let [falling-down?  (pos? (-> player :vel :y))
-                       solids         (entities/filter es :solid?)]
+                       solids         (entities/filter entities :solid?)]
                    (-> player
                      (->/cond
                        (collision/below? player solids)
@@ -45,13 +45,13 @@
                   (assoc :gravity false)
                   (assoc-in [:key-walker :can-walk?] true)
                   (assoc-in [:vel :y] 0)))
-         (update [player es input-state]
+         (update [player {:keys [entities input-state]}]
                  (-> player
                    (->/cond
                      (input/was-pressed? input-state :jump)
                      (fsm/change-state :jumping)
 
-                     (not (collision/below? player (entities/filter es :solid?)))
+                     (not (collision/below? player (entities/filter entities :solid?)))
                      (fsm/change-state :falling))))
 
          jumping
@@ -62,7 +62,7 @@
                   (assoc-in [:player-jumper :additionals-applied] 0)))
          (update [{{:keys [additionals-applied number-of-additionals additional-amount]} :player-jumper
                    :as player}
-                  es input-state]
+                  {:keys [input-state]}]
                  (-> player
                    (->/if (or (>= additionals-applied number-of-additionals)
                               (input/was-released? input-state :jump))
@@ -78,7 +78,7 @@
                   (assoc-in [:key-walker :can-walk?] false)
                   (->/in [:vel]
                          (assoc :x 0 :y 0))))
-         (update [player es input-state]
+         (update [player {:keys [entities input-state]}]
                  (-> player
                    (->/when (input/was-pressed? input-state :jump)
                             (->/if (input/is-down? input-state :move-down)
