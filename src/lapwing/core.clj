@@ -46,7 +46,11 @@
       (for [x (range 0 800 48)]
         (create-wall x 500))
       (for [x (range 100 250 48)]
-        (create-wall x 400)))))
+        (create-wall x 375))
+      (for [y (range 0 600 48)
+            x [0 (- 800 48)]]
+        (create-wall x y))
+      [(create-wall 500 350)])))
 
 (defn create-canvas
   [[width height] render-state input-state]
