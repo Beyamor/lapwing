@@ -43,7 +43,7 @@
          (begin [player]
                 (-> player
                   (assoc :gravity false)
-                  (assoc-in [:key-walker :can-walk] true)
+                  (assoc-in [:key-walker :can-walk?] true)
                   (assoc-in [:vel :y] 0)))
          (update [player es input-state]
                  (-> player
@@ -58,7 +58,7 @@
          (begin [{{:keys [initial-amount]} :player-jumper :as player}]
                 (-> player
                   (update-in [:vel :y] - initial-amount)
-                  (assoc-in [:key-walker :can-walk] true)
+                  (assoc-in [:key-walker :can-walk?] true)
                   (assoc-in [:player-jumper :additionals-applied] 0)))
          (update [{{:keys [additionals-applied number-of-additionals additional-amount]} :player-jumper
                    :as player}
@@ -75,7 +75,7 @@
          (begin [player]
                 (-> player
                   (assoc :gravity false)
-                  (assoc-in [:key-walker :can-walk] false)
+                  (assoc-in [:key-walker :can-walk?] false)
                   (->/in [:vel]
                          (assoc :x 0 :y 0))))
          (update [player es input-state]

@@ -32,7 +32,7 @@
                :y 300}
          :vel {:x 0
                :y 0}
-         :key-walker {:speed 7, :can-walk true}
+         :key-walker {:speed 7, :can-walk? true}
          :debug-rect "red"
          :gravity true
          :hitbox {:width  48
@@ -87,13 +87,13 @@
                 -1 0)
               (if (input/is-down? input-state :move-right)
                 1 0))]
-    (-> es
-      (entities/update-those-with
-        [:key-walker :vel]
-        (fn [{{:keys [speed can-walk] :or {speed 1}} :key-walker :as e}]
-          (-> e
-            (->/when can-walk
-                     (assoc-in [:vel :x] (* speed dx)))))))))
+    (util/flatten-1
+      (-> es
+        (entities/those-with [:key-walker :vel])
+        (entities/filter #(-> % :key-walker :can-walk?))
+        (entities/each
+          (fn [{{:keys [speed]} :key-walker :as e}]
+            [[:set-velocity e {:x (* speed dx)}]]))))))
 
 (defn maybe-move-step
   [e dim step dir solids]
@@ -156,6 +156,17 @@
            (->/when y
                     (update-in [:vel :y] + y))))))
 
+   :set-velocity
+   (fn [es _ who {:keys [x y]}]
+     (-> es
+       (entities/update-only
+         who
+         #(-> %
+            (->/when x
+                     (assoc-in [:vel :x] x))
+            (->/when y
+                     (assoc-in [:vel :y] y))))))
+
    :update-entity
    (fn [es input-state who updater]
      (-> es
@@ -168,17 +179,18 @@
   (loop [game-state {:entities (create-entities)}]
     (let [now (java.util.Date.)
           input-state (input/update! input-state)
-          es          (-> (:entities game-state)
-                        (updated-key-walkers input-state))
+          es          (:entities game-state)
           statements  (reduce
                         (fn [statements producer]
                           (concat statements (producer)))
-                        [] [#(apply-gravity es)
+                        [] [#(updated-key-walkers es input-state)
+                            #(apply-gravity es)
                             #(update-fsm es input-state)])
           es          (reduce
                         (fn [es [statement-type & data]]
                           (if-let [effector (get effectors statement-type)]
-                            (apply effector es input-state data)))
+                            (apply effector es input-state data)
+                            (throw (Exception. (str "No effector for " statement-type)))))
                         es statements)
           es          (move-dynamic-bodies es)
           new-state   (assoc game-state :entities es)]
