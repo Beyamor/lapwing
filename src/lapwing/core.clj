@@ -35,7 +35,7 @@
           :key-walker {:speed      7
                        :can-walk?  true}
           :key-shooter {:can-shoot?  true
-                        :shot-delay  15}
+                        :shot-delay  5}
           :direction :right
           :debug-rect "red"
           :gravity true
@@ -126,8 +126,8 @@
           (fn [{{:keys [shot-elapsed shot-delay] :or {shot-elapsed 0}} :key-shooter :as e}]
             (if (<= shot-elapsed 0)
               [[:create (shot-template (-> e :pos :x) (-> e :pos :y) (:direction e))]
-               [:set e [:shot-elapsed] shot-delay]]
-              [[:update e [:shot-elapsed] dec]])))))))
+               [:set e [:key-shooter :shot-elapsed] shot-delay]]
+              [[:update e [:key-shooter :shot-elapsed] dec]])))))))
 
 (defn move-along-dimension
   [e dim distance dir solids]
