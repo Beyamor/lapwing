@@ -36,7 +36,7 @@
           :key-walker {:speed      200
                        :can-walk?  true}
           :key-shooter {:can-shoot?  true
-                        :shot-delay  1}
+                        :shot-delay  0.5}
           :direction :right
           :debug-rect "red"
           :gravity true
@@ -112,7 +112,7 @@
   [x y direction]
   {:pos {:x x
          :y y}
-   :vel {:x (* 30 (util/direction->int direction))
+   :vel {:x (* 500 (util/direction->int direction))
          :y 0}
    :debug-rect "green"
    :hitbox {:width 16
@@ -122,17 +122,16 @@
                         [[:destroy self]])})
 
 (defn update-key-shooters
-  [{:keys [entities input-state]}]
+  [{:keys [entities input-state time]}]
   (when (input/is-down? input-state :shoot)
     (util/flatten-1
       (-> entities
         (entities/those-with [:key-shooter :pos :direction])
         (entities/each
-          (fn [{{:keys [shot-elapsed shot-delay] :or {shot-elapsed 0}} :key-shooter :as e}]
-            (if (<= shot-elapsed 0)
+          (fn [{{:keys [delay-start shot-delay] :or {delay-start 0}} :key-shooter :as e}]
+            (when (>= (- time delay-start) shot-delay)
               [[:create (shot-template (-> e :pos :x) (-> e :pos :y) (:direction e))]
-               [:set e [:key-shooter :shot-elapsed] shot-delay]]
-              [[:update e [:key-shooter :shot-elapsed] dec]])))))))
+               [:set e [:key-shooter :delay-start] time]])))))))
 
 (defn move-along-dimension
   [e dim distance dir solids]
