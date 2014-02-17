@@ -21,11 +21,17 @@
 
 (defn select-ids
   [es ids]
-  (let [ids-to-remove (clojure.set/difference (get-ids es) ids)]
-    (reduce
-      (fn [es id]
-        (remove es id))
-      es ids-to-remove)))
+  ; if selecting many ids
+  (if (> (count ids) (/ (count (:entities es)) 2))
+    ; remove the unselected ids
+    (let [ids-to-remove (clojure.set/difference (get-ids es) ids)]
+      (reduce
+        (fn [es id]
+          (remove es id))
+        es ids-to-remove))
+    ; otherwise, just rebuild from scratch
+    (reduce add empty-entities
+            (map #(get-in es [:entities %]) ids))))
 
 (defn filter
   [es pred?]
@@ -119,10 +125,17 @@
   (-> es
     (update-in [:entities] dissoc (entity/id e))))
 
-(defn in-region
+(defn ids-in-region
   [es left right top bottom]
-  (let [ids (reduce
-              (fn [ids [grid-x grid-y]]
-                (into ids (get-in es [:grid grid-x grid-y])))
-              #{} (grid-indices left right top bottom))]
-    (select-ids es ids)))
+  (->>
+    (grid-indices left right top bottom)
+    (map (fn [[x y]]
+           (get-in es [:grid x y])))
+    (reduce into #{})))
+
+(defn entities-in-region
+  [es left right top bottom]
+  (->>
+    (ids-in-region es left right top bottom)
+    (map #(get-in es [:entities %]))
+    (into #{})))

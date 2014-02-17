@@ -37,6 +37,7 @@
                        :can-walk?  true}
           :key-shooter {:can-shoot?  true
                         :shot-delay  1}
+>>>>>>> Region-based collision
           :direction :right
           :debug-rect "red"
           :gravity true
