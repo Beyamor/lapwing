@@ -122,8 +122,11 @@
 
 (defn remove
   [es e]
-  (-> es
-    (update-in [:entities] dissoc (entity/id e))))
+  (let [e (get-in es [:entities (entity/id e)])]
+    (-> es
+      (update-in [:entities] dissoc (entity/id e))
+      (->/in [:grid]
+             (remove-from-grid e)))))
 
 (defn ids-in-region
   [es left right top bottom]
