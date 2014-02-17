@@ -1,7 +1,7 @@
 (ns lapwing.entities
   (:require [lapwing.entity :as entity]
             [lapwing.util :as util])
-  (:refer-clojure :exclude [filter]))
+  (:refer-clojure :exclude [filter remove]))
 
 (defn create
   [initial-entities]
@@ -53,3 +53,7 @@
 (defn add
   [es e]
   (assoc es (entity/id e) e))
+
+(defn remove
+  [es e]
+  (dissoc es (entity/id e)))

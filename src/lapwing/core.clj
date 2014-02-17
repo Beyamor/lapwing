@@ -112,7 +112,9 @@
    :debug-rect "green"
    :hitbox {:width 16
             :height 16}
-   :dynamic-body {:stopped-by-solids? true}})
+   :dynamic-body {:stopped-by-solids? true}
+   :collision-handler (fn [self other]
+                        [[:destroy self]])})
 
 (defn update-key-shooters
   [{:keys [entities input-state]}]
@@ -156,9 +158,15 @@
                     (concat
                       [[:move e (:pos e)]]
                       (when x-collision
-                        [[:set e [:vel :x] 0]])
+                        (concat
+                          [[:set e [:vel :x] 0]]
+                          (when (entity/has-component? e :collision-handler)
+                            ((:collision-handler e) e x-collision))))
                       (when y-collision
-                        [[:set e [:vel :y] 0]])))))
+                        (concat
+                          [[:set e [:vel :y] 0]]
+                          (when (entity/has-component? e :collision-handler)
+                            ((:collision-handler e) e y-collision))))))))
               [[:move e {:x vx
                          :y vy
                          :relative? true}]])))))))
@@ -186,6 +194,10 @@
   {:create
    (fn [{:keys [entities]} components]
      (entities/add entities (entity/create components)))
+
+   :destroy
+   (fn [{:keys [entities]} e]
+        (entities/remove entities e))
 
    :move
    (fn [{:keys [entities]} who {:keys [x y relative?]}]
