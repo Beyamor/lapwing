@@ -70,12 +70,15 @@
                                (doto g
                                  (.setBackground (s.col/color "white"))
                                  (.clearRect 0 0 width height))
-                               (doseq [[_ {:keys [pos debug-rect hitbox]}] (:entities render-state)
-                                       :when debug-rect]
-                                 (doto g
-                                   (.setColor (s.col/color debug-rect))
-                                   (.fillRect (:x pos) (:y pos)
-                                              (:width hitbox) (:height hitbox)))))))
+                               (dorun
+                                 (entities/each
+                                   (:entities render-state)
+                                   (fn [{:keys [pos debug-rect hitbox]}]
+                                     (when debug-rect
+                                       (doto g
+                                         (.setColor (s.col/color debug-rect))
+                                         (.fillRect (:x pos) (:y pos)
+                                                    (:width hitbox) (:height hitbox))))))))))
                  :listen  [:key-pressed   (set-key-state! :down)
                            :key-released  (set-key-state! :up)])]
     (.setFocusable canvas true)
