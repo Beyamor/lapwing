@@ -100,7 +100,8 @@
             (concat
               [[:accelerate e {:x (* speed dx)
                                :relative? false}]]
-              (when (entity/has-component? e :direction)
+              (when (and (not (zero? dx))
+                         (entity/has-component? e :direction))
                 [[:set e [:direction] direction]]))))))))
 
 (defn shot-template
