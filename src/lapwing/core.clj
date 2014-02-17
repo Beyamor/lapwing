@@ -99,10 +99,10 @@
           (fn [{{:keys [speed]} :key-walker :as e}]
             (concat
               [[:accelerate e {:x (* speed dx)
-                               :relative? false}]]
-              (when (and (not (zero? dx))
-                         (entity/has-component? e :direction))
-                [[:set e [:direction] direction]]))))))))
+                               :relative? false}]
+               (when (and (not (zero? dx))
+                          (entity/has-component? e :direction))
+                 [:set e [:direction] direction])])))))))
 
 (defn shot-template
   [x y direction]
@@ -256,7 +256,8 @@
         (if-let [effector (get effectors statement-type)]
           (assoc game-state :entities (apply effector game-state data))
           (throw (Exception. (str "No effector for " statement-type)))))
-      game-state statements)))
+      game-state
+      (filter identity statements))))
 
 (defn run
   [render-state input-state]
