@@ -263,15 +263,24 @@
       game-state
       (filter identity statements))))
 
+(defn now
+  []
+  (int (/ (System/nanoTime) 1000000)))
+
 (defn run
   [render-state input-state]
-  (loop [game-state {:entities (create-entities)}]
-    (let [now (java.util.Date.)
-          input-state (input/update! input-state)
+  (loop [game-state {:entities  (create-entities)
+                     :time      (now)}]
+    (let [start-time  (now)
+          time-delta    (- start-time (:time game-state))
+          game-state    (assoc game-state
+                               :time start-time
+                               :time-delta time-delta
+                               :input-state (input/update! input-state))
           es          (:entities game-state)
           es          (reduce
                         (fn [es produce]
-                          (let [game-state {:entities es :input-state input-state}]
+                          (let [game-state (assoc game-state :entities es)]
                             (effect-statements game-state
                                                (produce game-state))))
                         es
@@ -280,10 +289,14 @@
                          apply-gravity
                          update-fsm
                          move-dynamic-bodies])
-          new-state   (assoc game-state :entities es)]
-      (send render-state (constantly new-state))
-      (Thread/sleep 20)
-      (recur new-state))))
+          game-state    (assoc game-state :entities es)]
+      (send render-state (constantly game-state))
+      ; eat up the remaning time
+      (let [remaining-time (- 1000/30
+                             (- (now) start-time))]
+        (when (pos? remaining-time)
+          (Thread/sleep remaining-time)))
+      (recur game-state))))
 
 (defn -main
   [& args]
