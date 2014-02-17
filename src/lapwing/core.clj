@@ -33,7 +33,7 @@
                 :y 300}
           :vel {:x 0
                 :y 0}
-          :key-walker {:speed      7
+          :key-walker {:speed      200
                        :can-walk?  true}
           :key-shooter {:can-shoot?  true
                         :shot-delay  1}
@@ -44,8 +44,8 @@
                    :height 48}
           :state-machine {:name   :player
                           :state  :falling}
-          :player-jumper {:initial-amount         10
-                          :additional-amount      0.5
+          :player-jumper {:initial-amount         200
+                          :additional-amount      17
                           :number-of-additionals  5}
           :dynamic-body {:stopped-by-solids? true}})]
       (for [x (range 0 800 48)]
@@ -145,7 +145,7 @@
       [e])))
 
 (defn move-dynamic-bodies
-  [{:keys [entities]}]
+  [{:keys [entities time-delta]}]
   (let [solids (entities/filter entities :solid?)]
     (util/flatten-1
       (-> entities
@@ -155,8 +155,8 @@
             (if stopped-by-solids?
               (let [x-dir   (if (pos? vx) inc dec)
                     y-dir   (if (pos? vy) inc dec)
-                    x-step  (Math/floor (Math/abs vx))
-                    y-step  (Math/floor (Math/abs vy))]
+                    x-step  (-> vx (* time-delta) double Math/abs Math/floor)
+                    y-step  (-> vy (* time-delta) double Math/abs Math/floor)]
                 (when (or (pos? x-step) (pos? y-step))
                   (let [[e x-collision] (move-along-dimension e :x x-step x-dir solids)
                         [e y-collision] (move-along-dimension e :y y-step y-dir solids)]
@@ -176,7 +176,7 @@
                          :y vy
                          :relative? true}]])))))))
 
-(def gravity {:y 1})
+(def gravity {:y 20})
 
 (defn apply-gravity
   [{:keys [entities]}]
@@ -202,7 +202,7 @@
 
    :destroy
    (fn [{:keys [entities]} e]
-        (entities/remove entities e))
+     (entities/remove entities e))
 
    :move
    (fn [{:keys [entities]} who {:keys [x y relative?]}]
@@ -265,7 +265,7 @@
 
 (defn now
   []
-  (int (/ (System/nanoTime) 1000000)))
+  (/ (System/nanoTime) 1000000000))
 
 (defn run
   [render-state input-state]
@@ -293,7 +293,7 @@
       (send render-state (constantly game-state))
       ; eat up the remaning time
       (let [remaining-time (- 1000/30
-                             (- (now) start-time))]
+                              (- (now) start-time))]
         (when (pos? remaining-time)
           (Thread/sleep remaining-time)))
       (recur game-state))))
