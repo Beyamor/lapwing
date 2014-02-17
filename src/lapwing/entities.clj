@@ -1,23 +1,31 @@
 (ns lapwing.entities
   (:require [lapwing.entity :as entity]
             [lapwing.util :as util]
-            [lonocloud.synthread :as ->])
+            [lonocloud.synthread :as ->]
+            clojure.set)
   (:refer-clojure :exclude [filter remove]))
 
 (def empty-entities
   {:entities  {}
    :grid      {}})
 
-(declare add)
+(declare add remove)
 
 (defn create
   [initial-entities]
   (reduce add empty-entities initial-entities))
 
+(defn get-ids
+  [es]
+  (-> es :entities keys set))
+
 (defn select-ids
   [es ids]
-  (-> es
-    (update-in [:entities] select-keys ids)))
+  (let [ids-to-remove (clojure.set/difference (get-ids es) ids)]
+    (reduce
+      (fn [es id]
+        (remove es id))
+      es ids-to-remove)))
 
 (defn filter
   [es pred?]
