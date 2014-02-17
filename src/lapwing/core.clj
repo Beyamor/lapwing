@@ -11,7 +11,8 @@
             [seesaw.color :as s.col]
             [seesaw.timer :as s.time]
             [lonocloud.synthread :as ->])
-  (:import java.awt.event.KeyEvent))
+  (:import java.awt.event.KeyEvent)
+  (:gen-class :main true))
 
 (defn create-wall
   [x y]
@@ -35,7 +36,7 @@
           :key-walker {:speed      7
                        :can-walk?  true}
           :key-shooter {:can-shoot?  true
-                        :shot-delay  5}
+                        :shot-delay  1}
           :direction :right
           :debug-rect "red"
           :gravity true
