@@ -51,18 +51,26 @@
 (def grid-size 200)
 
 (defn grid-dims
-  [e]
-  [(-> e entity/left (/ grid-size) Math/floor)
-   (-> e entity/right (/ grid-size) Math/ceil)
-   (-> e entity/top (/ grid-size) Math/floor)
-   (-> e entity/bottom (/ grid-size) Math/ceil)])
+  [left right top bottom]
+  [(-> left (/ grid-size) Math/floor)
+   (-> right (/ grid-size) Math/ceil)
+   (-> top (/ grid-size) Math/floor)
+   (-> bottom (/ grid-size) Math/ceil)])
 
 (defn grid-indices
-  [e]
-  (let [[left right top bottom] (grid-dims e)]
+  [left right top bottom]
+  (let [[left right top bottom] (grid-dims left right top bottom)]
     (for [x (range left (inc right))
           y (range top (inc bottom))]
       [x y])))
+
+(defn entity-grid-indices
+  [e]
+  (grid-indices
+    (entity/left e)
+    (entity/right e)
+    (entity/top e)
+    (entity/bottom e)))
 
 (defn add-to-grid
   [grid e]
@@ -70,7 +78,7 @@
     (reduce
       (fn [grid [x y]]
         (update-in grid [x y] (fnil conj #{}) id))
-      grid (grid-indices e))))
+      grid (entity-grid-indices e))))
 
 (defn remove-from-grid
   [grid e]
@@ -78,7 +86,7 @@
     (reduce
       (fn [grid [x y]]
         (update-in grid [x y] (fnil disj #{}) id))
-      grid (grid-indices e))))
+      grid (entity-grid-indices e))))
 
 (defn update-only
   [es who updater]
@@ -102,3 +110,11 @@
   [es e]
   (-> es
     (update-in [:entities] dissoc (entity/id e))))
+
+(defn in-region
+  [es left right top bottom]
+  (let [ids (reduce
+              (fn [ids [grid-x grid-y]]
+                (into ids (get-in es [:grid grid-x grid-y])))
+              #{} (grid-indices left right top bottom))]
+    (select-ids es ids)))
