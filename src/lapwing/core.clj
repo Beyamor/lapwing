@@ -33,7 +33,7 @@
                 :y 300}
           :vel {:x 0
                 :y 0}
-          :key-walker {:speed      200
+          :key-walker {:speed      300
                        :can-walk?  true}
           :key-shooter {:can-shoot?  true
                         :shot-delay  0.5}
@@ -44,8 +44,8 @@
                    :height 48}
           :state-machine {:name   :player
                           :state  :falling}
-          :player-jumper {:initial-amount         200
-                          :additional-amount      17
+          :player-jumper {:initial-amount         350
+                          :additional-amount      15
                           :number-of-additionals  5}
           :dynamic-body {:stopped-by-solids? true}})]
       (for [x (range 0 800 48)]
@@ -175,7 +175,7 @@
                          :y vy
                          :relative? true}]])))))))
 
-(def gravity {:y 20})
+(def gravity {:y 80})
 
 (defn apply-gravity
   [{:keys [entities]}]
