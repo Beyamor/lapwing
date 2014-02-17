@@ -49,3 +49,7 @@
   [es who updater]
   (let [id (entity/id who)]
     (update-in es [id] updater)))
+
+(defn add
+  [es e]
+  (assoc es (entity/id e) e))

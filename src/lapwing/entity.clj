@@ -4,7 +4,7 @@
   (:refer-clojure :exclude [=]))
 
 (defn create
-  [& {:as components}]
+  [components]
   (assoc components
          ::id (util/gen-id)))
 

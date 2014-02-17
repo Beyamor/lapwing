@@ -16,34 +16,37 @@
 (defn create-wall
   [x y]
   (entity/create
-    :pos {:x x
-          :y y}
-    :debug-rect "black"
-    :hitbox {:width   48
-             :height  48}
-    :solid? true))
+    {:pos {:x x
+           :y y}
+     :debug-rect "black"
+     :hitbox {:width   48
+              :height  48}
+     :solid? true}))
 
 (defn create-entities
   []
   (entities/create
     (concat
       [(entity/create
-         :pos {:x 300
-               :y 300}
-         :vel {:x 0
-               :y 0}
-         :key-walker {:speed 7, :can-walk? true}
-         :debug-rect "red"
-         :gravity true
-         :hitbox {:width  48
-                  :height 48}
-         :state-machine {:name   :player
-                         :state  :falling}
-         :player-jumper {:initial-amount         10
-                         :additional-amount      0.5
-                         :number-of-additionals  5}
-         :dynamic-body
-         {:stopped-by-solids? true})]
+         {:pos {:x 300
+                :y 300}
+          :vel {:x 0
+                :y 0}
+          :key-walker {:speed      7
+                       :can-walk?  true}
+          :key-shooter {:can-shoot?  true
+                        :shot-delay  15}
+          :direction :right
+          :debug-rect "red"
+          :gravity true
+          :hitbox {:width  48
+                   :height 48}
+          :state-machine {:name   :player
+                          :state  :falling}
+          :player-jumper {:initial-amount         10
+                          :additional-amount      0.5
+                          :number-of-additionals  5}
+          :dynamic-body {:stopped-by-solids? true}})]
       (for [x (range 0 800 48)]
         (create-wall x 500))
       (for [x (range 100 250 48)]
@@ -81,20 +84,48 @@
       :delay 17)
     canvas))
 
-(defn updated-key-walkers
+(defn update-key-walkers
   [{:keys [entities input-state]}]
   (let [dx (+ (if (input/is-down? input-state :move-left)
                 -1 0)
               (if (input/is-down? input-state :move-right)
-                1 0))]
+                1 0))
+        direction (if (neg? dx) :left :right)]
     (util/flatten-1
       (-> entities
         (entities/those-with [:key-walker :vel])
         (entities/filter #(-> % :key-walker :can-walk?))
         (entities/each
           (fn [{{:keys [speed]} :key-walker :as e}]
-            [[:accelerate e {:x (* speed dx)
-                             :relative? false}]]))))))
+            (concat
+              [[:accelerate e {:x (* speed dx)
+                               :relative? false}]]
+              (when (entity/has-component? e :direction)
+                [[:set e [:direction] direction]]))))))))
+
+(defn shot-template
+  [x y direction]
+  {:pos {:x x
+         :y y}
+   :vel {:x (* 30 (util/direction->int direction))
+         :y 0}
+   :debug-rect "green"
+   :hitbox {:width 16
+            :height 16}
+   :dynamic-body {:stopped-by-solids? true}})
+
+(defn update-key-shooters
+  [{:keys [entities input-state]}]
+  (when (input/is-down? input-state :shoot)
+    (util/flatten-1
+      (-> entities
+        (entities/those-with [:key-shooter :pos :direction])
+        (entities/each
+          (fn [{{:keys [shot-elapsed shot-delay] :or {shot-elapsed 0}} :key-shooter :as e}]
+            (if (<= shot-elapsed 0)
+              [[:create (shot-template (-> e :pos :x) (-> e :pos :y) (:direction e))]
+               [:set e [:shot-elapsed] shot-delay]]
+              [[:update e [:shot-elapsed] dec]])))))))
 
 (defn move-along-dimension
   [e dim distance dir solids]
@@ -152,7 +183,11 @@
         #(fsm/update % game-state)))))
 
 (def effectors
-  {:move
+  {:create
+   (fn [{:keys [entities]} components]
+     (entities/add entities (entity/create components)))
+
+   :move
    (fn [{:keys [entities]} who {:keys [x y relative?]}]
      (let [update (if relative?
                     #(update-in %1 [:pos %2] + %3)
@@ -222,7 +257,8 @@
                             (effect-statements game-state
                                                (produce game-state))))
                         es
-                        [updated-key-walkers
+                        [update-key-walkers
+                         update-key-shooters
                          apply-gravity
                          update-fsm
                          move-dynamic-bodies])
@@ -237,6 +273,7 @@
         input-state   (doto (input/create-state)
                         (input/def!
                           :jump       KeyEvent/VK_X
+                          :shoot      KeyEvent/VK_C
                           :move-left  [KeyEvent/VK_KP_LEFT  KeyEvent/VK_LEFT]
                           :move-right [KeyEvent/VK_KP_RIGHT KeyEvent/VK_RIGHT]
                           :move-down  [KeyEvent/VK_KP_DOWN  KeyEvent/VK_DOWN]))

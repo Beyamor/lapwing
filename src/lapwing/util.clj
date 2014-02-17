@@ -50,3 +50,9 @@
               (nth args (dec (anon-arg->number thing)))
               thing))
           form))))
+
+(defn direction->int
+  [direction]
+  (case direction
+    :left -1
+    :right 1))
