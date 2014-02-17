@@ -62,7 +62,7 @@
   (for [[id e] (:entities es)]
     (f e)))
 
-(def grid-size 200)
+(def grid-size 50)
 
 (defn grid-dims
   [left right top bottom]
