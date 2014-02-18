@@ -52,19 +52,19 @@
                    (fsm/change-state player :falling)))
 
          jumping
-         (begin [{{:keys [initial-amount]} :player-jumper :as player}]
-                [[:update player [:vel :y] #(- % initial-amount)]
+         (begin [{{:keys [initial-acceleration]} :player-jumper :as player}]
+                [[:accelerate player {:y (* -1 initial-acceleration)}]
                  [:set player [:key-walker :can-walk?] true
-                  [:player-jumper :additionals-applied] 0]])
-         (update [{{:keys [additionals-applied number-of-additionals additional-amount]} :player-jumper
+                              [:player-jumper :additionals-applied] 0]])
+         (update [{{:keys [additional-acceleration additional-time]} :player-jumper
+                   {:keys [start-time]} :state-machine
                    :as player}
-                  {:keys [input-state entities]}]
-                 (if (or (>= additionals-applied number-of-additionals)
+                  {:keys [input-state entities time]}]
+                 (if (or (>= (- time start-time) additional-time)
                          (input/was-released? input-state :jump)
                          (collision/above? player (entities/filter entities :solid?)))
                    (fsm/change-state player :falling)
-                   [[:update player [:vel :y] #(- % additional-amount)
-                     [:player-jumper :additionals-applied] inc]]))
+                   [[:accelerate player {:y (* -1 additional-acceleration)}]]))
 
          grabbing
          (begin [player]

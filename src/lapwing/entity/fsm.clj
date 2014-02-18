@@ -38,7 +38,8 @@
   [{:keys [state-machine] :as entity} new-state]
   (let [begin (:begin (fsm-spec (:name state-machine) new-state))]
     (concat
-      [[:set entity [:state-machine :state] new-state]]
+      [[:set entity [:state-machine :state] new-state]
+       [:store-time entity [:state-machine :start-time]]]
       (begin entity))))
 
 (defn update

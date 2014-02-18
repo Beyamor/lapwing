@@ -44,9 +44,9 @@
                    :height 48}
           :state-machine {:name   :player
                           :state  :falling}
-          :player-jumper {:initial-amount         350
-                          :additional-amount      15
-                          :number-of-additionals  5}
+          :player-jumper {:initial-acceleration     5500
+                          :additional-acceleration  150
+                          :additional-time          0.3}
           :dynamic-body {:stopped-by-solids? true}})]
       (for [x (range 0 800 48)]
         (create-wall x 500))
@@ -175,7 +175,7 @@
                          :y vy
                          :relative? true}]])))))))
 
-(def gravity {:y 80})
+(def gravity {:y 800})
 
 (defn apply-gravity
   [{:keys [entities]}]
@@ -204,9 +204,9 @@
      (entities/remove entities e))
 
    :move
-   (fn [{:keys [entities]} who {:keys [x y relative?]}]
+   (fn [{:keys [entities time-delta]} who {:keys [x y relative?]}]
      (let [update (if relative?
-                    #(update-in %1 [:pos %2] + %3)
+                    #(update-in %1 [:pos %2] + (* time-delta %3))
                     #(assoc-in %1 [:pos %2] %3))]
        (-> entities
          (entities/update-only
@@ -217,10 +217,10 @@
               (->/when y
                        (update :y y)))))))
    :accelerate
-   (fn [{:keys [entities]} who {:keys [x y relative?]
+   (fn [{:keys [entities time-delta]} who {:keys [x y relative?]
                                 :or {relative? true}}]
      (let [update (if relative?
-                    #(update-in %1 [:vel %2] + %3)
+                    #(update-in %1 [:vel %2] + (* time-delta %3))
                     #(assoc-in %1 [:vel %2] %3))]
        (-> entities
          (entities/update-only
@@ -249,7 +249,14 @@
          #(reduce
             (fn [entity [path f]]
               (update-in entity path f))
-            % (partition 2 specs)))))})
+            % (partition 2 specs)))))
+   
+   :store-time
+   (fn [{:keys [entities time]} who path]
+     (-> entities
+       (entities/update-only
+         who
+         #(assoc-in % path time))))})
 
 (defn effect-statements
   [game-state statements] 
