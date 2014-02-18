@@ -63,9 +63,11 @@
 ;
 ;           General collection stuff
 ;
-(defn create-collection
-  [seed initial-entities]
-  (reduce add seed initial-entities))
+(defn create
+  ([initial-entities]
+   (create {} initial-entities))
+  ([seed initial-entities]
+   (reduce add seed initial-entities)))
 
 (defn filter
   [es pred?]
