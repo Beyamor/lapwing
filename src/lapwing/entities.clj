@@ -135,7 +135,7 @@
   [es left right top bottom]
   (->>
     (ids-in-region es left right top bottom)
-    (select-ids es)))
+    (select-ids (:entities es))))
 
 (defrecord SpatialEntityCollection
   [entities grid])
