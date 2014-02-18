@@ -6,8 +6,7 @@
 (defn check
   [e es]
   (-> es
-    (entities/in-region
-      (entity/left e) (entity/right e) (entity/top e) (entity/bottom e))
+    (entities/in-entity-region e)
     (entities/any?
       #(and (not (entity/= e %))
             (entity/collide? e %)))))

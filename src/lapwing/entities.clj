@@ -6,7 +6,7 @@
   (:refer-clojure :exclude [filter list get remove]))
 
 ;
-;           The entity collection protocol
+;           Core protocols (+ wrappers)
 ;
 (defprotocol EntityCollection
   (-get [es id])
@@ -38,9 +38,35 @@
 (defn update-only [es who updater]
   (-update-only es (entity/id who) updater))
 
+(defprotocol SpatialAccess
+  (-in-region [es left right top bottom]))
+
+(declare filter)
+(extend-protocol SpatialAccess
+  Object
+  (-in-region [es left right top bottom]
+    (filter es
+            #(not (or (< right (entity/left %))
+                      (> left (entity/right %))
+                      (< bottom (entity/top %))
+                      (> top (entity/bottom %)))))))
+
+(defn in-region
+  [es left right top bottom]
+  (-in-region es left right top bottom))
+
+(defn in-entity-region
+  [es e]
+  (in-region es
+             (entity/left e) (entity/right e) (entity/top e) (entity/bottom e)))
+
 ;
 ;           General collection stuff
 ;
+(defn create-collection
+  [seed initial-entities]
+  (reduce add seed initial-entities))
+
 (defn filter
   [es pred?]
   (select-ids es
@@ -149,12 +175,6 @@
            (get-in es [:grid x y])))
     (reduce into #{})))
 
-(defn in-region
-  [es left right top bottom]
-  (->>
-    (ids-in-region es left right top bottom)
-    (-select-ids (:entities es))))
-
 (defrecord SpatialEntityCollection
   [entities grid]
 
@@ -201,12 +221,15 @@
         (->/when (not= (:pos original) (:pos updated))
                  (->/in [:grid]
                         (remove-from-grid original)
-                        (add-to-grid updated)))))))
+                        (add-to-grid updated))))))
+
+  SpatialAccess
+  (-in-region [this left right top bottom]
+    (->>
+      (ids-in-region this left right top bottom)
+      (-select-ids (:entities this)))))
+
 
 (def empty-spatial-entity-collection
   (->SpatialEntityCollection
     {} {}))
-
-(defn create-spatial-collection
-  [initial-entities]
-  (reduce add empty-spatial-entity-collection initial-entities))

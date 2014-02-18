@@ -26,7 +26,7 @@
 
 (defn create-entities
   []
-  (entities/create-spatial-collection
+  (entities/create-collection {}
     (concat
       [(entity/create
          {:pos {:x 300
