@@ -3,43 +3,29 @@
             [lapwing.util :as util]
             [lonocloud.synthread :as ->]
             clojure.set)
-  (:refer-clojure :exclude [filter remove]))
+  (:refer-clojure :exclude [get filter remove list]))
 
-(def empty-entities
-  {:entities  {}
-   :grid      {}})
+;
+;           The entity collection protocol
+;
+(defprotocol EntityCollection
+  (get [es id])
+  (get-ids [es])
+  (select-ids [es ids])
+  (add [es e])
+  (remove [es e])
+  (list [es])
+  (update-only [es who updater]))
 
-(declare add remove)
-
-(defn create
-  [initial-entities]
-  (reduce add empty-entities initial-entities))
-
-(defn get-ids
-  [es]
-  (-> es :entities keys set))
-
-(defn select-ids
-  [es ids]
-  ; if selecting many ids
-  (if (> (count ids) (/ (count (:entities es)) 2))
-    ; remove the unselected ids
-    (let [ids-to-remove (clojure.set/difference (get-ids es) ids)]
-      (reduce
-        (fn [es id]
-          (remove es id))
-        es ids-to-remove))
-    ; otherwise, just rebuild from scratch
-    (do
-    (reduce add empty-entities
-            (map #(get-in es [:entities %]) ids)))))
-
+;
+;           General collection stuff
+;
 (defn filter
   [es pred?]
   (select-ids es
-              (for [[id e] (:entities es)
+              (for [e (list es)
                     :when (pred? e)]
-                id)))
+                (entity/id e))))
 
 (defn those-with
   [es components]
@@ -48,7 +34,7 @@
 
 (defn any?
   [es pred?]
-  (loop [es (-> es :entities vals)]
+  (loop [es (list es)]
     (when (seq es)
       (if (pred? (first es))
         (first es)
@@ -60,8 +46,13 @@
 
 (defn each
   [es f]
-  (for [[id e] (:entities es)]
+  (for [e (list es)]
     (f e)))
+
+;
+;           Spatial entity collections
+;
+(declare empty-spatial-entity-collection)
 
 (def grid-size 50)
 
@@ -103,32 +94,6 @@
         (update-in grid [x y] (fnil disj #{}) id))
       grid (entity-grid-indices e))))
 
-(defn update-only
-  [es who updater]
-  (let [id        (entity/id who)
-        original  (get-in es [:entities id])
-        updated   (updater original)]
-    (-> es
-      (assoc-in [:entities id] updated)
-      (->/when (not= (:pos original) (:pos updated))
-               (->/in [:grid]
-                      (remove-from-grid original)
-                      (add-to-grid updated))))))
-
-(defn add
-  [es e]
-  (-> es
-    (assoc-in [:entities (entity/id e)] e)
-    (update-in [:grid] add-to-grid e)))
-
-(defn remove
-  [es e]
-  (let [e (get-in es [:entities (entity/id e)])]
-    (-> es
-      (update-in [:entities] dissoc (entity/id e))
-      (->/in [:grid]
-             (remove-from-grid e)))))
-
 (defn ids-in-region
   [es left right top bottom]
   (->>
@@ -142,3 +107,59 @@
   (->>
     (ids-in-region es left right top bottom)
     (select-ids es)))
+
+(defrecord SpatialEntityCollection
+  [entities grid])
+
+(extend-type SpatialEntityCollection
+  EntityCollection
+  (get [this id]
+    (clojure.core/get (:entities this) (entity/id id)))
+
+  (get-ids [this]
+    (-> this :entities keys set))
+
+  (select-ids [this ids]
+    (if (> (count ids) (/ (count (:entities this)) 2))
+      ; remove the unselected ids
+      (let [ids-to-remove (clojure.set/difference (get-ids this) ids)]
+        (reduce
+          (fn [this id]
+            (remove this id))
+          this ids-to-remove))
+      ; otherwise, just rebuild from scratch
+      (reduce add empty-spatial-entity-collection
+              (map #(get this %) ids))))
+
+  (add [this e]
+    (-> this
+      (assoc-in [:entities (entity/id e)] e)
+      (update-in [:grid] add-to-grid e)))
+
+  (remove [this e]
+    (let [e (get this e)]
+      (-> this
+        (update-in [:entities] dissoc (entity/id e))
+        (->/in [:grid]
+               (remove-from-grid e)))))
+
+  (list [this]
+    (-> this :entities vals))
+
+  (update-only [this who updater]
+    (let [id        (entity/id who)
+          original  (get this id)
+          updated   (updater original)]
+      (-> this
+        (assoc-in [:entities id] updated)
+        (->/when (not= (:pos original) (:pos updated))
+                 (->/in [:grid]
+                        (remove-from-grid original)
+                        (add-to-grid updated)))))))
+
+(def empty-spatial-entity-collection
+  (->SpatialEntityCollection {} {}))
+
+(defn create-spatial-collection
+  [initial-entities]
+  (reduce add empty-spatial-entity-collection initial-entities))
