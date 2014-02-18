@@ -50,6 +50,35 @@
     (f e)))
 
 ;
+;           Simple collections
+;
+(defrecord SimpleEntityCollection
+  [entities])
+
+(extend-type SimpleEntityCollection
+  EntityCollection
+  (get [this id]
+    (clojure.core/get (:entities this) (entity/id id)))
+
+  (get-ids [this]
+    (-> this :entities keys set))
+
+  (select-ids [this ids]
+    (update-in this [:entities] select-keys ids))
+
+  (add [this e]
+    (update-in this [:entities] assoc (entity/id e) e))
+
+  (remove [this e]
+    (update-in this [:entities] dissoc (entity/id e)))
+
+  (list [this]
+    (-> this :entities vals))
+
+  (update-only [this who updater]
+    (update-in this [:entities (entity/id who)] updater)))
+
+;
 ;           Spatial entity collections
 ;
 (declare empty-spatial-entity-collection)
