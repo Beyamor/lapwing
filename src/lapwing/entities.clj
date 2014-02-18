@@ -50,32 +50,30 @@
     (f e)))
 
 ;
-;           Simple collections
+;           Maps are the simplest collections, yo
 ;
-(defrecord SimpleEntityCollection
-  [entities]
-
-  EntityCollection
+(extend-protocol EntityCollection
+  clojure.lang.APersistentMap
   (get-entity [this id]
-    (get (:entities this) (entity/id id)))
+    (get this (entity/id id)))
 
   (get-ids [this]
-    (-> this :entities keys set))
+    (-> this keys set))
 
   (select-ids [this ids]
-    (update-in this [:entities] select-keys ids))
+    (select-keys this ids))
 
   (add-entity [this e]
-    (update-in this [:entities] assoc (entity/id e) e))
+    (assoc this (entity/id e) e))
 
   (remove-entity [this e]
-    (update-in this [:entities] dissoc (entity/id e)))
+    (dissoc this (entity/id e)))
 
   (list [this]
-    (-> this :entities vals))
+    (vals this))
 
   (update-only [this who updater]
-    (update-in this [:entities (entity/id who)] updater)))
+    (update-in this [(entity/id who)] updater)))
 
 ;
 ;           Spatial entity collections
@@ -187,7 +185,7 @@
 
 (def empty-spatial-entity-collection
   (->SpatialEntityCollection
-    (->SimpleEntityCollection {}) {}))
+    {} {}))
 
 (defn create-spatial-collection
   [initial-entities]
