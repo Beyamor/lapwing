@@ -143,10 +143,10 @@
 (extend-type SpatialEntityCollection
   EntityCollection
   (get [this id]
-    (clojure.core/get (:entities this) (entity/id id)))
+    (-> this :entities (get id)))
 
   (get-ids [this]
-    (-> this :entities keys set))
+    (-> this :entities get-ids))
 
   (select-ids [this ids]
     (if (> (count ids) (/ (count (:entities this)) 2))
@@ -162,32 +162,34 @@
 
   (add [this e]
     (-> this
-      (assoc-in [:entities (entity/id e)] e)
+      (update-in [:entities] add e)
       (update-in [:grid] add-to-grid e)))
 
   (remove [this e]
     (let [e (get this e)]
       (-> this
-        (update-in [:entities] dissoc (entity/id e))
-        (->/in [:grid]
-               (remove-from-grid e)))))
+        (update-in [:entities] remove e)
+        (update-in [:grid] remove-from-grid e))))
 
   (list [this]
-    (-> this :entities vals))
+    (-> this :entities list))
 
   (update-only [this who updater]
     (let [id        (entity/id who)
           original  (get this id)
           updated   (updater original)]
       (-> this
-        (assoc-in [:entities id] updated)
+        (->/in [:entities]
+               (remove original)
+               (add updated))
         (->/when (not= (:pos original) (:pos updated))
                  (->/in [:grid]
                         (remove-from-grid original)
                         (add-to-grid updated)))))))
 
 (def empty-spatial-entity-collection
-  (->SpatialEntityCollection {} {}))
+  (->SpatialEntityCollection
+    (->SimpleEntityCollection {}) {}))
 
 (defn create-spatial-collection
   [initial-entities]
