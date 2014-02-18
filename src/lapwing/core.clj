@@ -36,7 +36,7 @@
           :key-walker {:speed      300
                        :can-walk?  true}
           :key-shooter {:can-shoot?  true
-                        :shot-delay  0.5}
+                        :shot-delay  0.0}
           :direction :right
           :debug-rect "red"
           :gravity true

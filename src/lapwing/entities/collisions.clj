@@ -5,15 +5,12 @@
 
 (defn check
   [e es]
-  (some #(when (and (not (entity/= e %))
-                    (entity/collide? e %))
-           %)
-        (entities/entities-in-region
-          es
-          (entity/left e)
-          (entity/right e)
-          (entity/top e)
-          (entity/bottom e))))
+  (-> es
+    (entities/in-region
+      (entity/left e) (entity/right e) (entity/top e) (entity/bottom e))
+    (entities/any?
+      #(and (not (entity/= e %))
+            (entity/collide? e %)))))
 
 (def ? check)
 

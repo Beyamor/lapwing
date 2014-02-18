@@ -30,8 +30,9 @@
           (remove es id))
         es ids-to-remove))
     ; otherwise, just rebuild from scratch
+    (do
     (reduce add empty-entities
-            (map #(get-in es [:entities %]) ids))))
+            (map #(get-in es [:entities %]) ids)))))
 
 (defn filter
   [es pred?]
@@ -136,9 +137,8 @@
            (get-in es [:grid x y])))
     (reduce into #{})))
 
-(defn entities-in-region
+(defn in-region
   [es left right top bottom]
   (->>
     (ids-in-region es left right top bottom)
-    (map #(get-in es [:entities %]))
-    (into #{})))
+    (select-ids es)))
