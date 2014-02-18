@@ -3,13 +3,13 @@
             [lapwing.util :as util]
             [lonocloud.synthread :as ->]
             clojure.set)
-  (:refer-clojure :exclude [get filter remove list]))
+  (:refer-clojure :exclude [filter remove list]))
 
 ;
 ;           The entity collection protocol
 ;
 (defprotocol EntityCollection
-  (get [es id])
+  (get-entity [es id])
   (get-ids [es])
   (select-ids [es ids])
   (add [es e])
@@ -57,8 +57,8 @@
 
 (extend-type SimpleEntityCollection
   EntityCollection
-  (get [this id]
-    (clojure.core/get (:entities this) (entity/id id)))
+  (get-entity [this id]
+    (get (:entities this) (entity/id id)))
 
   (get-ids [this]
     (-> this :entities keys set))
@@ -142,8 +142,8 @@
 
 (extend-type SpatialEntityCollection
   EntityCollection
-  (get [this id]
-    (-> this :entities (get id)))
+  (get-entity [this id]
+    (-> this :entities (get-entity id)))
 
   (get-ids [this]
     (-> this :entities get-ids))
@@ -158,7 +158,7 @@
           this ids-to-remove))
       ; otherwise, just rebuild from scratch
       (reduce add empty-spatial-entity-collection
-              (map #(get this %) ids))))
+              (map #(get-entity this %) ids))))
 
   (add [this e]
     (-> this
@@ -166,7 +166,7 @@
       (update-in [:grid] add-to-grid e)))
 
   (remove [this e]
-    (let [e (get this e)]
+    (let [e (get-entity this e)]
       (-> this
         (update-in [:entities] remove e)
         (update-in [:grid] remove-from-grid e))))
@@ -176,7 +176,7 @@
 
   (update-only [this who updater]
     (let [id        (entity/id who)
-          original  (get this id)
+          original  (get-entity this id)
           updated   (updater original)]
       (-> this
         (->/in [:entities]
