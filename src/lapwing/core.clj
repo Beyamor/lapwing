@@ -197,11 +197,11 @@
 (def effectors
   {:create
    (fn [{:keys [entities]} components]
-     (entities/add entities (entity/create components)))
+     (entities/add-entity entities (entity/create components)))
 
    :destroy
    (fn [{:keys [entities]} e]
-     (entities/remove entities e))
+     (entities/remove-entity entities e))
 
    :move
    (fn [{:keys [entities time-delta]} who {:keys [x y relative?]}]
