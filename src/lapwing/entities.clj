@@ -11,7 +11,7 @@
 (defprotocol EntityCollection
   (-get [es id])
   (-get-ids [es])
-  (-select-ids [es ids])
+  (-filter [es pred?])
   (-add [es e])
   (-remove [es id])
   (-list [es])
@@ -23,8 +23,8 @@
 (defn get-ids [es]
   (set (-get-ids es)))
 
-(defn select-ids [es ids]
-  (-select-ids es ids))
+(defn filter [es pred?]
+  (-filter es pred?))
 
 (defn add [es e]
   (-add es e))
@@ -41,7 +41,6 @@
 (defprotocol SpatialAccess
   (-in-region [es left right top bottom]))
 
-(declare filter)
 (extend-protocol SpatialAccess
   Object
   (-in-region [es left right top bottom]
@@ -68,13 +67,6 @@
    (create {} initial-entities))
   ([seed initial-entities]
    (reduce add seed initial-entities)))
-
-(defn filter
-  [es pred?]
-  (select-ids es
-              (for [e (list es)
-                    :when (pred? e)]
-                (entity/id e))))
 
 (defn those-with
   [es components]
@@ -109,8 +101,11 @@
   (-get-ids [this]
     (-> this keys set))
 
-  (-select-ids [this ids]
-    (select-keys this ids))
+   (-filter [this pred?] 
+     (into {}
+           (for [[id e] this
+                 :when (pred? e)]
+             [id e])))
 
   (-add [this e]
     (assoc this (entity/id e) e))
@@ -187,7 +182,7 @@
   (-get-ids [this]
     (-> this :entities get-ids))
 
-  (-select-ids [this ids]
+  (-filter [this ids]
     (if (> (count ids) (/ (count (:entities this)) 2))
       ; -remove the unselected ids
       (let [ids-to-remove (clojure.set/difference (get-ids this) ids)]
