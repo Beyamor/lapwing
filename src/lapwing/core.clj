@@ -14,6 +14,8 @@
   (:import java.awt.event.KeyEvent)
   (:gen-class :main true))
 
+(set! *warn-on-reflection* true)
+
 (defn create-wall
   [x y]
   (entity/create
@@ -60,11 +62,11 @@
 (defn create-canvas
   [[width height] render-state input-state]
   (let [set-key-state! (fn [state]
-                         (fn [e]
+                         (fn [^KeyEvent e]
                            (input/set-state! input-state (.getKeyCode e) state)))
-        canvas (s/canvas 
+        ^java.awt.Component canvas (s/canvas 
                  :size   [width :by height]
-                 :paint  (fn [c g]
+                 :paint  (fn [c ^java.awt.Graphics2D g]
                            (let [render-state @render-state]
                              (when render-state
                                (doto g
