@@ -11,6 +11,7 @@
 (defprotocol EntityCollection
   (-get [es id])
   (-get-ids [es])
+  (-select-ids [es ids])
   (-filter [es pred?])
   (-add [es e])
   (-remove [es id])
@@ -22,6 +23,9 @@
 
 (defn get-ids [es]
   (set (-get-ids es)))
+
+(defn select-ids [es ids]
+  (-select-ids es ids))
 
 (defn filter [es pred?]
   (-filter es pred?))
@@ -68,6 +72,8 @@
 (defn create
   ([initial-entities]
    (create (new-delayed-filter-collection) initial-entities))
+   ;(create empty-spatial-entity-collection initial-entities))
+   ;(create {} initial-entities))
   ([seed initial-entities]
    (reduce add seed initial-entities)))
 
@@ -104,6 +110,9 @@
   (-get-ids [this]
     (-> this keys set))
 
+  (-select-ids [this ids]
+    (select-keys this ids))
+
   (-filter [this pred?] 
     (into {}
           (for [[id e] this
@@ -136,12 +145,19 @@
    (-> top (/ grid-size) Math/floor)
    (-> bottom (/ grid-size) Math/ceil)])
 
+(def grid-indices-
+  (memoize
+    (fn [left right top bottom]
+      (let [xs (range left (inc right))
+            ys (range top (inc bottom))]
+        (for [x xs
+              y ys]
+          [x y])))))
+
 (defn grid-indices
   [left right top bottom]
   (let [[left right top bottom] (grid-dims left right top bottom)]
-    (for [x (range left (inc right))
-          y (range top (inc bottom))]
-      [x y])))
+    (grid-indices- left right top bottom)))
 
 (defn entity-grid-indices
   [e]
@@ -169,67 +185,59 @@
 
 (defn ids-in-region
   [es left right top bottom]
-  (->>
-    (grid-indices left right top bottom)
-    (map (fn [[x y]]
-           (get-in es [:grid x y])))
-    (reduce into #{})))
+  (let [grid (:grid es)]
+    (->>
+      (grid-indices left right top bottom)
+      (map (fn [[x y]]
+             (get-in grid [x y])))
+      (reduce into #{}))))
 
 (defrecord SpatialEntityCollection
   [entities grid]
 
   EntityCollection
   (-get [this id]
-    (-> this :entities (get id)))
+    (-get entities id))
 
   (-get-ids [this]
-    (-> this :entities get-ids))
+    (-get-ids entities))
+
+  (-select-ids [this ids]
+    (-select-ids entities ids))
 
   (-filter [this pred?]
-    (let [ids (for [[id e] (:entities this)
-                    :when (pred? e)]
-                id)]
-      (if (> (count ids) (/ (count (:entities this)) 2))
-        ; remove the unselected ids
-        (let [ids-to-remove (clojure.set/difference (get-ids this) ids)]
-          (reduce
-            (fn [this id]
-              (remove this id))
-            this ids-to-remove))
-        ; otherwise, just rebuild from scratch
-        (reduce add empty-spatial-entity-collection
-                (map #(get this %) ids)))))
+    (-filter entities pred?))
 
   (-add [this e]
-    (-> this
-      (update-in [:entities] add e)
-      (update-in [:grid] add-to-grid e)))
+    (->SpatialEntityCollection
+      (-add entities e)
+      (add-to-grid grid e)))
 
   (-remove [this id]
-    (let [e (-get this id)]
-      (-> this
-        (update-in [:entities] remove e)
-        (update-in [:grid] remove-from-grid e))))
+    (let [e (-get entities id)]
+      (->SpatialEntityCollection
+        (-remove entities id)
+        (remove-from-grid grid e))))
 
   (-list [this]
-    (-> this :entities list))
+    (-list entities))
 
   (-update-only [this id updater]
-    (let [original  (get this id)
+    (let [original  (-get entities id)
           updated   (updater original)]
-      (-> this
-        (->/in [:entities]
-               (remove id)
-               (add updated))
-        (->/when (not= (:pos original) (:pos updated))
-                 (->/in [:grid]
-                        (remove-from-grid original)
-                        (add-to-grid updated))))))
+      (->SpatialEntityCollection
+        (-> entities
+          (-remove id)
+          (-add updated))
+        (-> grid
+          (->/when (not= (:pos original) (:pos updated))
+                   (remove-from-grid original)
+                   (add-to-grid updated))))))
 
   SpatialAccess
   (-in-region [this left right top bottom]
-    (let [ids (ids-in-region this left right top bottom)]
-      (filter this #(contains? ids (entity/id %))))))
+    (-select-ids entities
+                 (ids-in-region this left right top bottom))))
 
 (def empty-spatial-entity-collection
   (->SpatialEntityCollection
@@ -242,7 +250,8 @@
 (declare ->DelayedFilterCollection)
 (defn new-delayed-filter-collection
   ([]
-   (new-delayed-filter-collection {}))
+   (new-delayed-filter-collection
+     empty-spatial-entity-collection))
   ([base-entities]
    (->DelayedFilterCollection
      base-entities
@@ -266,6 +275,9 @@
   (-get-ids [this]
     (-get-ids @filtered-entities))
 
+  (-select-ids [this ids]
+    (-select-ids @filtered-entities ids))
+
   (-filter [this pred?]
     (let [pred?s (conj pred?s pred?)]
       (->DelayedFilterCollection
@@ -286,4 +298,13 @@
 
   (-update-only [this id updater]
     (new-delayed-filter-collection
-      (-update-only @filtered-entities id updater))))
+      (-update-only @filtered-entities id updater)))
+
+  SpatialAccess
+  (-in-region [this left right top bottom]
+    (let [regional-subset (-in-region base-entities
+                                      left right top bottom)]
+      (->DelayedFilterCollection 
+        regional-subset
+        (delay-filtering-entities regional-subset pred?s)
+        pred?s))))
