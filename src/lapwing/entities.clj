@@ -182,17 +182,20 @@
   (-get-ids [this]
     (-> this :entities get-ids))
 
-  (-filter [this ids]
-    (if (> (count ids) (/ (count (:entities this)) 2))
-      ; -remove the unselected ids
-      (let [ids-to-remove (clojure.set/difference (get-ids this) ids)]
-        (reduce
-          (fn [this id]
-            (remove this id))
-          this ids-to-remove))
-      ; otherwise, just rebuild from scratch
-      (reduce add empty-spatial-entity-collection
-              (map #(get this %) ids))))
+  (-filter [this pred?]
+    (let [ids (for [[id e] (:entities this)
+                    :when (pred? e)]
+                id)]
+      (if (> (count ids) (/ (count (:entities this)) 2))
+        ; remove the unselected ids
+        (let [ids-to-remove (clojure.set/difference (get-ids this) ids)]
+          (reduce
+            (fn [this id]
+              (remove this id))
+            this ids-to-remove))
+        ; otherwise, just rebuild from scratch
+        (reduce add empty-spatial-entity-collection
+                (map #(get this %) ids)))))
 
   (-add [this e]
     (-> this
