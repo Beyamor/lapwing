@@ -62,9 +62,12 @@
 ;
 ;           General collection stuff
 ;
+
+(declare new-delayed-filter-collection)
+(declare empty-spatial-entity-collection)
 (defn create
   ([initial-entities]
-   (create {} initial-entities))
+   (create (new-delayed-filter-collection) initial-entities))
   ([seed initial-entities]
    (reduce add seed initial-entities)))
 
@@ -101,11 +104,11 @@
   (-get-ids [this]
     (-> this keys set))
 
-   (-filter [this pred?] 
-     (into {}
-           (for [[id e] this
-                 :when (pred? e)]
-             [id e])))
+  (-filter [this pred?] 
+    (into {}
+          (for [[id e] this
+                :when (pred? e)]
+            [id e])))
 
   (-add [this e]
     (assoc this (entity/id e) e))
@@ -225,11 +228,62 @@
 
   SpatialAccess
   (-in-region [this left right top bottom]
-    (->>
-      (ids-in-region this left right top bottom)
-      (-select-ids (:entities this)))))
-
+    (let [ids (ids-in-region this left right top bottom)]
+      (filter this #(contains? ids (entity/id %))))))
 
 (def empty-spatial-entity-collection
   (->SpatialEntityCollection
     {} {}))
+
+;
+;         Delayed filter collections
+;         (allowing us to compose filters)
+;
+(declare ->DelayedFilterCollection)
+(defn new-delayed-filter-collection
+  ([]
+   (new-delayed-filter-collection {}))
+  ([base-entities]
+   (->DelayedFilterCollection
+     base-entities
+     (delay base-entities)
+     [])))
+
+(defn delay-filtering-entities
+  [entities pred?s]
+  (delay
+    (filter entities
+            (fn [e]
+              (every? #(% e) pred?s)))))
+
+(deftype DelayedFilterCollection
+  [base-entities filtered-entities pred?s]
+
+  EntityCollection
+  (-get [this id]
+    (-get @filtered-entities id))
+
+  (-get-ids [this]
+    (-get-ids @filtered-entities))
+
+  (-filter [this pred?]
+    (let [pred?s (conj pred?s pred?)]
+      (->DelayedFilterCollection
+        base-entities
+        (delay-filtering-entities base-entities pred?s)
+        pred?s)))
+
+  (-add [this e]
+    (new-delayed-filter-collection
+      (-add @filtered-entities e)))
+
+  (-remove [this id]
+    (new-delayed-filter-collection
+      (-remove @filtered-entities id)))
+
+  (-list [this]
+    (-list @filtered-entities))
+
+  (-update-only [this id updater]
+    (new-delayed-filter-collection
+      (-update-only @filtered-entities id updater))))
