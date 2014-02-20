@@ -1,14 +1,19 @@
 (ns lapwing.game.entities
-  (:require [lapwing.util :as util]))
+  (:require [lapwing.util :as util]
+            [lonocloud.synthread :as ->]))
 
-(defn wall
-  [x y]
-  {:pos {:x x
-         :y y}
-   :debug-rect "black"
-   :hitbox {:width   48
-            :height  48}
-   :solid? true})
+(let [wall-template
+      {:pos {:x 0
+             :y 0}
+       :debug-rect "black"
+       :hitbox {:width   48
+                :height  48}
+       :solid? true}]
+  (defn wall
+    [x y]
+    (-> wall-template
+      (->/in [:pos]
+             (assoc :x x :y y)))))
 
 (def player
   {:pos {:x 300
@@ -31,15 +36,21 @@
                    :additional-time          0.3}
    :dynamic-body {:stopped-by-solids? true}})
 
-(defn shot
-  [x y direction]
-  {:pos {:x x
-         :y y}
-   :vel {:x (* 500 (util/direction->int direction))
-         :y 0}
-   :debug-rect "green"
-   :hitbox {:width 16
-            :height 16}
-   :dynamic-body {:stopped-by-solids? true}
-   :collision-handler (fn [self other]
-                        [[:destroy self]])})
+(let [shot-template
+      {:pos {:x 0
+             :y 0}
+       :vel {:x 0
+             :y 0}
+       :debug-rect "green"
+       :hitbox {:width 16
+                :height 16}
+       :dynamic-body {:stopped-by-solids? true}
+       :collision-handler (fn [self other]
+                            [[:destroy self]])}]
+  (defn shot
+    [x y direction]
+    (-> shot-template
+      (->/in [:pos]
+             (assoc :x x :y y))
+      (->/in [:vel]
+             (assoc :x (* 500 (util/direction->int direction)))))))
