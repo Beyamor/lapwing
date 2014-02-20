@@ -43,20 +43,25 @@
         ^java.awt.Component canvas (s/canvas 
                  :size   [width :by height]
                  :paint  (fn [c ^java.awt.Graphics2D g]
-                           (let [render-state @render-state]
+                           (let [{:keys [entities time-delta]} @render-state]
                              (when render-state
                                (doto g
                                  (.setBackground (s.col/color "white"))
                                  (.clearRect 0 0 width height))
                                (dorun
                                  (entities/each
-                                   (:entities render-state)
+                                   entities
                                    (fn [{:keys [pos debug-rect hitbox]}]
                                      (when debug-rect
                                        (doto g
                                          (.setColor (s.col/color debug-rect))
                                          (.fillRect (:x pos) (:y pos)
-                                                    (:width hitbox) (:height hitbox))))))))))
+                                                    (:width hitbox) (:height hitbox)))))))
+                               (doto g
+                                 (.setColor (s.col/color "blue"))
+                                 (.fillRect 0 0 20 20)
+                                 (.setColor (s.col/color "white"))
+                                 (.drawString (-> time-delta / int str) 3 15)))))
                  :listen  [:key-pressed   (set-key-state! :down)
                            :key-released  (set-key-state! :up)])]
     (.setFocusable canvas true)
