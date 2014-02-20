@@ -1,5 +1,5 @@
 (ns lapwing.core
-  (:require [lapwing.util :as util :refer [return]]
+  (:require [lapwing.util :as util]
             [lapwing.image :as image]
             [lapwing.entities :as entities]
             [lapwing.entities.collisions :as collision]
@@ -149,7 +149,8 @@
       (entities/those-with [:vel :gravity])
       (entities/filter :gravity)
       (entities/each
-        (return [[:accelerate % gravity]])))))
+        (fn [e]
+          [[:accelerate e gravity]])))))
 
 (defn update-fsm
   [{:keys [entities] :as game-state}]
