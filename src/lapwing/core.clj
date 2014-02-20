@@ -264,10 +264,10 @@
           game-state    (assoc game-state :entities es)]
       (send render-state (constantly game-state))
       ; eat up the remaning time
-      (let [remaining-time (- 1000/30
+      (let [remaining-time (- 1/30
                               (- (now) start-time))]
         (when (pos? remaining-time)
-          (Thread/sleep remaining-time)))
+          (Thread/sleep (* 1000 remaining-time))))
       (recur game-state))))
 
 (defn -main
