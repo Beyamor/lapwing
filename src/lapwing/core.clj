@@ -7,6 +7,7 @@
             [lapwing.entity.fsm :as fsm]
             [lapwing.input :as input]
             [lapwing.player :as player]
+            [lapwing.game.entities :as game-entities]
             [seesaw.core :as s]
             [seesaw.color :as s.col]
             [seesaw.timer :as s.time]
@@ -18,38 +19,13 @@
 
 (defn create-wall
   [x y]
-  (entity/create
-    {:pos {:x x
-           :y y}
-     :debug-rect "black"
-     :hitbox {:width   48
-              :height  48}
-     :solid? true}))
+  (entity/create (game-entities/wall x y)))
 
 (defn create-entities
   []
   (entities/create
     (concat
-      [(entity/create
-         {:pos {:x 300
-                :y 300}
-          :vel {:x 0
-                :y 0}
-          :key-walker {:speed      300
-                       :can-walk?  true}
-          :key-shooter {:can-shoot?  true
-                        :shot-delay  0.2}
-          :direction :right
-          :debug-rect "red"
-          :gravity true
-          :hitbox {:width  48
-                   :height 48}
-          :state-machine {:name   :player
-                          :state  :falling}
-          :player-jumper {:initial-acceleration     5500
-                          :additional-acceleration  150
-                          :additional-time          0.3}
-          :dynamic-body {:stopped-by-solids? true}})]
+      [(entity/create game-entities/player)]
       (for [x (range 0 800 48)]
         (create-wall x 500))
       (for [x (range 100 250 48)]
@@ -110,19 +86,6 @@
                           (entity/has-component? e :direction))
                  [:set e [:direction] direction])])))))))
 
-(defn shot-template
-  [x y direction]
-  {:pos {:x x
-         :y y}
-   :vel {:x (* 500 (util/direction->int direction))
-         :y 0}
-   :debug-rect "green"
-   :hitbox {:width 16
-            :height 16}
-   :dynamic-body {:stopped-by-solids? true}
-   :collision-handler (fn [self other]
-                        [[:destroy self]])})
-
 (defn update-key-shooters
   [{:keys [entities input-state time]}]
   (when (input/is-down? input-state :shoot)
@@ -132,7 +95,7 @@
         (entities/each
           (fn [{{:keys [delay-start shot-delay] :or {delay-start 0}} :key-shooter :as e}]
             (when (>= (- time delay-start) shot-delay)
-              [[:create (shot-template (-> e :pos :x) (-> e :pos :y) (:direction e))]
+              [[:create (game-entities/shot (-> e :pos :x) (-> e :pos :y) (:direction e))]
                [:set e [:key-shooter :delay-start] time]])))))))
 
 (defn move-along-dimension
