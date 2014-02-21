@@ -8,6 +8,7 @@
             [lapwing.input :as input]
             [lapwing.player :as player]
             [lapwing.game.entities :as game-entities]
+            [lapwing.cameras :as cam]
             [seesaw.core :as s]
             [seesaw.color :as s.col]
             [seesaw.timer :as s.time]
@@ -41,29 +42,30 @@
                          (fn [^KeyEvent e]
                            (input/set-state! input-state (.getKeyCode e) state)))
         ^java.awt.Component canvas (s/canvas 
-                 :size   [width :by height]
-                 :paint  (fn [c ^java.awt.Graphics2D g]
-                           (let [{:keys [entities time-delta]} @render-state]
-                             (when render-state
-                               (doto g
-                                 (.setBackground (s.col/color "white"))
-                                 (.clearRect 0 0 width height))
-                               (dorun
-                                 (entities/each
-                                   entities
-                                   (fn [{:keys [pos debug-rect hitbox]}]
-                                     (when debug-rect
-                                       (doto g
-                                         (.setColor (s.col/color debug-rect))
-                                         (.fillRect (:x pos) (:y pos)
-                                                    (:width hitbox) (:height hitbox)))))))
-                               (doto g
-                                 (.setColor (s.col/color "blue"))
-                                 (.fillRect 0 0 20 20)
-                                 (.setColor (s.col/color "white"))
-                                 (.drawString (-> time-delta / int str) 3 15)))))
-                 :listen  [:key-pressed   (set-key-state! :down)
-                           :key-released  (set-key-state! :up)])]
+                                     :size   [width :by height]
+                                     :paint  (fn [c ^java.awt.Graphics2D g]
+                                               (let [{:keys [entities time-delta camera]} @render-state]
+                                                 (when entities
+                                                   (doto g
+                                                     (.setBackground (s.col/color "white"))
+                                                     (.clearRect 0 0 width height))
+                                                   (dorun
+                                                     (entities/each
+                                                       entities
+                                                       (fn [{:keys [pos debug-rect hitbox]}]
+                                                         (when debug-rect
+                                                           (doto g
+                                                             (.setColor (s.col/color debug-rect))
+                                                             (.fillRect (- (:x pos) (:x camera))
+                                                                        (- (:y pos) (:y camera))
+                                                                        (:width hitbox) (:height hitbox)))))))
+                                                   (doto g
+                                                     (.setColor (s.col/color "blue"))
+                                                     (.fillRect 0 0 20 20)
+                                                     (.setColor (s.col/color "white"))
+                                                     (.drawString (-> time-delta / int str) 3 15)))))
+                                     :listen  [:key-pressed   (set-key-state! :down)
+                                               :key-released  (set-key-state! :up)])]
     (.setFocusable canvas true)
     (s.time/timer
       (fn [_]
@@ -165,80 +167,103 @@
       (entities/each
         #(fsm/update % game-state)))))
 
+(defn move-camera
+  [{:keys [entities]}]
+  (util/flatten-1
+    (-> entities
+      (entities/those-with [:camera-target :pos])
+      (entities/each
+        (fn [e]
+          [[:center-camera-on e]])))))
+
 (def effectors
   {:create
    (fn [{:keys [entities]} components]
-     (entities/add entities (entity/create components)))
+     {:entities
+      (entities/add entities (entity/create components))})
 
    :destroy
    (fn [{:keys [entities]} e]
-     (entities/remove entities e))
+     {:entities
+      (entities/remove entities e)})
 
    :move
    (fn [{:keys [entities time-delta]} who {:keys [x y relative?]}]
-     (let [update (if relative?
-                    #(update-in %1 [:pos %2] + (* time-delta %3))
-                    #(assoc-in %1 [:pos %2] %3))]
-       (-> entities
-         (entities/update-only
-           who
-           #(-> %
-              (->/when x
-                       (update :x x))
-              (->/when y
-                       (update :y y)))))))
+     {:entities
+      (let [update (if relative?
+                     #(update-in %1 [:pos %2] + (* time-delta %3))
+                     #(assoc-in %1 [:pos %2] %3))]
+        (-> entities
+          (entities/update-only
+            who
+            #(-> %
+               (->/when x
+                        (update :x x))
+               (->/when y
+                        (update :y y))))))})
+
    :accelerate
    (fn [{:keys [entities time-delta]} who {:keys [x y relative?]
-                                :or {relative? true}}]
-     (let [update (if relative?
-                    #(update-in %1 [:vel %2] + (* time-delta %3))
-                    #(assoc-in %1 [:vel %2] %3))]
-       (-> entities
-         (entities/update-only
-           who
-           #(-> %
-              (->/when x
-                       (update :x x))
-              (->/when y
-                       (update :y y)))))))
+                                           :or {relative? true}}]
+     {:entities
+      (let [update (if relative?
+                     #(update-in %1 [:vel %2] + (* time-delta %3))
+                     #(assoc-in %1 [:vel %2] %3))]
+        (-> entities
+          (entities/update-only
+            who
+            #(-> %
+               (->/when x
+                        (update :x x))
+               (->/when y
+                        (update :y y))))))})
 
    :set
    (fn [{:keys [entities]} who & specs]
-     (-> entities
-       (entities/update-only
-         who
-         #(reduce
-            (fn [entity [path value]]
-              (assoc-in entity path value))
-            % (partition 2 specs)))))
+     {:entities
+      (-> entities
+        (entities/update-only
+          who
+          #(reduce
+             (fn [entity [path value]]
+               (assoc-in entity path value))
+             % (partition 2 specs))))})
 
    :update
    (fn [{:keys [entities]} who & specs]
-     (-> entities
-       (entities/update-only
-         who
-         #(reduce
-            (fn [entity [path f]]
-              (update-in entity path f))
-            % (partition 2 specs)))))
-   
+     {:entities
+      (-> entities
+        (entities/update-only
+          who
+          #(reduce
+             (fn [entity [path f]]
+               (update-in entity path f))
+             % (partition 2 specs))))})
+
    :store-time
    (fn [{:keys [entities time]} who path]
-     (-> entities
-       (entities/update-only
-         who
-         #(assoc-in % path time))))})
+     {:entities
+      (-> entities
+        (entities/update-only
+          who
+          #(assoc-in % path time)))})
+   
+   :center-camera-on
+   (fn [{:keys [entities camera]} who]
+     {:camera
+      (cam/center
+        camera
+        (-> entities (entities/get who) :pos))})})
 
 (defn effect-statements
   [game-state statements] 
-  (:entities
-    (reduce
-      (fn [game-state [statement-type & data]]
-        (if-let [effector (get effectors statement-type)]
-          (assoc game-state :entities (apply effector game-state data))
-          (throw (Exception. (str "No effector for " statement-type)))))
-      game-state
-      (filter identity statements))))
+  (reduce
+    (fn [game-state [statement-type & data]]
+      (if-let [effector (get effectors statement-type)]
+        (merge game-state (apply effector game-state data))
+        (throw (Exception. (str "No effector for " statement-type)))))
+    game-state
+    (filter identity statements)))
 
 (defn now
   []
@@ -247,6 +272,7 @@
 (defn run
   [render-state input-state]
   (loop [game-state {:entities  (create-entities)
+                     :camera    (cam/simple-camera 800 600)
                      :time      (now)}]
     (let [start-time  (now)
           time-delta    (- start-time (:time game-state))
@@ -255,18 +281,17 @@
                                :time-delta time-delta
                                :input-state (input/update! input-state))
           es          (:entities game-state)
-          es          (reduce
-                        (fn [es produce]
-                          (let [game-state (assoc game-state :entities es)]
-                            (effect-statements game-state
-                                               (produce game-state))))
-                        es
+          game-state  (reduce
+                        (fn [game-state produce]
+                          (effect-statements game-state
+                                             (produce game-state)))
+                        game-state
                         [update-key-walkers
                          update-key-shooters
                          apply-gravity
                          update-fsm
-                         move-dynamic-bodies])
-          game-state    (assoc game-state :entities es)]
+                         move-dynamic-bodies
+                         move-camera])]
       (send render-state (constantly game-state))
       ; eat up the remaning time
       (let [remaining-time (- 1/30

@@ -34,7 +34,8 @@
    :player-jumper {:initial-acceleration     5500
                    :additional-acceleration  150
                    :additional-time          0.3}
-   :dynamic-body {:stopped-by-solids? true}})
+   :dynamic-body {:stopped-by-solids? true}
+   :camera-target true})
 
 (let [shot-template
       {:pos {:x 0
