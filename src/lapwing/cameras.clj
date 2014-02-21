@@ -19,6 +19,22 @@
            {:x (- center-x (half-width camera))
             :y (- center-y (half-height camera))}))
 
+(defn left
+  [camera]
+  (:x camera))
+
+(defn right
+  [camera]
+  (+ (left camera) (:width camera)))
+
+(defn top
+  [camera]
+  (:y camera))
+
+(defn bottom
+  [camera]
+  (+ (top camera) (:height camera)))
+
 (defn simple-camera
   [width height]
   {:x 0

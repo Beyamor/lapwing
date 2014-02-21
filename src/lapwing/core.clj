@@ -49,15 +49,18 @@
                                                      (.setBackground (s.col/color "white"))
                                                      (.clearRect 0 0 width height))
                                                    (dorun
-                                                     (entities/each
-                                                       entities
-                                                       (fn [{:keys [pos debug-rect hitbox]}]
-                                                         (when debug-rect
-                                                           (doto g
-                                                             (.setColor (s.col/color debug-rect))
-                                                             (.fillRect (- (:x pos) (:x camera))
-                                                                        (- (:y pos) (:y camera))
-                                                                        (:width hitbox) (:height hitbox)))))))
+                                                     (-> entities
+                                                       (entities/in-region
+                                                         (cam/left camera) (cam/right camera)
+                                                         (cam/top camera) (cam/bottom camera))
+                                                       (entities/each
+                                                         (fn [{:keys [pos debug-rect hitbox]}]
+                                                           (when debug-rect
+                                                             (doto g
+                                                               (.setColor (s.col/color debug-rect))
+                                                               (.fillRect (- (:x pos) (:x camera))
+                                                                          (- (:y pos) (:y camera))
+                                                                          (:width hitbox) (:height hitbox))))))))
                                                    (doto g
                                                      (.setColor (s.col/color "blue"))
                                                      (.fillRect 0 0 20 20)
