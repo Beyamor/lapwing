@@ -3,7 +3,8 @@
             [lonocloud.synthread :as ->]))
 
 (let [wall-template
-      {:pos {:x 0
+      {:type :wall
+       :pos {:x 0
              :y 0}
        :debug-rect "black"
        :hitbox {:width   48

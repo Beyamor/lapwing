@@ -82,6 +82,11 @@
   (filter es
           #(entity/has-components? % components)))
 
+(defn of-type
+  [es type]
+  (filter es
+          #(= type (:type %))))
+
 (defn any?
   [es pred?]
   (loop [es (list es)]

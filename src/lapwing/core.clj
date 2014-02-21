@@ -31,9 +31,8 @@
         (create-wall x 500))
       (for [x (range 100 250 48)]
         (create-wall x 375))
-      (for [y (range 0 600 48)
-            x [0 (- 800 48)]]
-        (create-wall x y))
+      (for [y (range 0 600 48)]
+        (create-wall 0 y))
       [(create-wall 500 350)])))
 
 (defn create-canvas
@@ -176,6 +175,22 @@
         (fn [e]
           [[:center-camera-on e]])))))
 
+(defn extend-level
+  [{:keys [entities camera]}]
+  (let [left    (+ (:x camera) (:width camera))
+        right   (+ left (:width camera))
+        top     0
+        bottom  600
+        walls   (-> entities
+                  (entities/of-type :wall)
+                  (entities/in-region
+                    left right top bottom)
+                  entities/list)]
+    (when (empty? walls)
+      (for [x (range left right 48)
+            :let [y 500]]
+        [:create (game-entities/wall x y)]))))
+
 (def effectors
   {:create
    (fn [{:keys [entities]} components]
@@ -291,7 +306,8 @@
                          apply-gravity
                          update-fsm
                          move-dynamic-bodies
-                         move-camera])]
+                         move-camera
+                         extend-level])]
       (send render-state (constantly game-state))
       ; eat up the remaning time
       (let [remaining-time (- 1/30
