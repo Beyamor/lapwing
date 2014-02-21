@@ -1,5 +1,5 @@
 (ns lapwing.core
-  (:require [lapwing.util :as util]
+  (:require [lapwing.util :as util :refer [defs]]
             [lapwing.image :as image]
             [lapwing.entities :as entities]
             [lapwing.entities.collisions :as collision]
@@ -18,6 +18,10 @@
 
 (set! *warn-on-reflection* true)
 
+(defs
+  window-width 800
+  window-height 600)
+
 (defn create-wall
   [x y]
   (entity/create (game-entities/wall x y)))
@@ -27,11 +31,11 @@
   (entities/create
     (concat
       [(entity/create game-entities/player)]
-      (for [x (range 0 800 48)]
+      (for [x (range 0 window-width game-entities/unit-width)]
         (create-wall x 500))
-      (for [x (range 100 250 48)]
+      (for [x (range 100 250 game-entities/unit-width)]
         (create-wall x 375))
-      (for [y (range 0 600 48)]
+      (for [y (range 0 600 game-entities/unit-width)]
         (create-wall 0 y))
       [(create-wall 500 350)])))
 
@@ -190,7 +194,7 @@
                     left right top bottom)
                   entities/list)]
     (when (empty? walls)
-      (for [x (range left right 48)
+      (for [x (range left right game-entities/unit-width)
             :let [y 500]]
         [:create (game-entities/wall x y)]))))
 
@@ -290,7 +294,7 @@
 (defn run
   [render-state input-state]
   (loop [game-state {:entities  (create-entities)
-                     :camera    (cam/simple-camera 800 600)
+                     :camera    (cam/simple-camera window-width window-height)
                      :time      (now)}]
     (let [start-time  (now)
           time-delta    (- start-time (:time game-state))
@@ -329,7 +333,7 @@
                           :move-left  [KeyEvent/VK_KP_LEFT  KeyEvent/VK_LEFT]
                           :move-right [KeyEvent/VK_KP_RIGHT KeyEvent/VK_RIGHT]
                           :move-down  [KeyEvent/VK_KP_DOWN  KeyEvent/VK_DOWN]))
-        canvas        (create-canvas [800 600] render-state input-state)]
+        canvas        (create-canvas [window-width window-height] render-state input-state)]
     (doto (Thread. #(run render-state input-state))
       .start)
     (s/invoke-later

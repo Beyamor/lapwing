@@ -2,13 +2,15 @@
   (:require [lapwing.util :as util]
             [lonocloud.synthread :as ->]))
 
+(def unit-width 48)
+
 (let [wall-template
       {:type :wall
        :pos {:x 0
              :y 0}
        :debug-rect "black"
-       :hitbox {:width   48
-                :height  48}
+       :hitbox {:width   unit-width
+                :height  unit-width}
        :solid? true}]
   (defn wall
     [x y]
@@ -28,8 +30,8 @@
    :direction :right
    :debug-rect "red"
    :gravity true
-   :hitbox {:width  48
-            :height 48}
+   :hitbox {:width  unit-width
+            :height unit-width}
    :state-machine {:name   :player
                    :state  :falling}
    :player-jumper {:initial-acceleration     5500

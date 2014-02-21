@@ -22,3 +22,8 @@
   (case direction
     :left -1
     :right 1))
+
+(defmacro defs
+  [& defs]
+  `(do ~@(for [[name value] (partition 2 defs)]
+           `(def ~name ~value))))
