@@ -75,10 +75,10 @@
                                                                                 ["Entities" (if entities
                                                                                               (count (entities/list entities))
                                                                                               0)]])]
-                                                     (doto ^java.awt.Graphics2D g
+                                                     (doto g
                                                        (.setColor (s.col/color "white"))
                                                        (.drawString (str label ":" thing)
-                                                                    3 (+ (* 20 i) 15)))))))
+                                                                    3 ^int (+ (* 20 i) 15)))))))
                                      :listen  [:key-pressed   (set-key-state! :down)
                                                :key-released  (set-key-state! :up)])]
     (.setFocusable canvas true)
