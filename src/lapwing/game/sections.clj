@@ -81,8 +81,12 @@
   [template]
   (for [[x y :as xy]  xs-and-ys
         :let          [symbol (get template xy)]
-        :when         (not (#{:_ :g} symbol))]
+        :when         (not (#{:_} symbol))]
     (case symbol
       :w (game-entities/wall
+           (* x game-entities/unit-width)
+           (* y game-entities/unit-width))
+
+      :g (game-entities/gem
            (* x game-entities/unit-width)
            (* y game-entities/unit-width)))))

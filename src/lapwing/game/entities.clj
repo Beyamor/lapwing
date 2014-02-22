@@ -72,3 +72,20 @@
             :height 600}
    :debug-rect "#6CBDF0"
    :dynamic-body {:stopped-by-solids? false}})
+
+(let [gem-template  {:pos {:x 0
+                           :y 0}
+                     :vel {:y 0
+                           :x 0}
+                     :type :gem
+                     :hitbox {:width 16
+                              :height 16}
+                     :debug-rect "#E38B2D"
+                     :dynamic-body {:stopped-by-solids? true}
+                     :gravity true
+                     :remove-when-passed? true}]
+  (defn gem
+    [x y]
+    (-> gem-template
+      (->/in [:pos]
+             (assoc :x x :y y)))))
