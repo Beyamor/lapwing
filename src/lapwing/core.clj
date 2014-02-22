@@ -52,7 +52,7 @@
         ^java.awt.Component canvas (s/canvas 
                                      :size   [width :by height]
                                      :paint  (fn [c ^java.awt.Graphics2D g]
-                                               (let [{:keys [entities time-delta camera]} @render-state]
+                                               (let [{:keys [entities time-delta camera score]} @render-state]
                                                  (when entities
                                                    (doto g
                                                      (.setBackground (s.col/color "#0B0A1C"))
@@ -76,7 +76,8 @@
                                                                                          0)]
                                                                                 ["Entities" (if entities
                                                                                               (count (entities/list entities))
-                                                                                              0)]])]
+                                                                                              0)]
+                                                                                 ["Score" (if score score 0)]])]
                                                      (doto g
                                                        (.setColor (s.col/color "white"))
                                                        (.drawString (str label ":" thing)
@@ -131,6 +132,7 @@
                          game-systems/pace-the-beast
                          game-systems/remove-passed-entities
                          game-systems/remove-offscreen-entities
+                         game-systems/collect-gems
                          game-systems/check-for-getting-eaten])]
       (send render-state (constantly game-state))
       ; eat up the remaning time

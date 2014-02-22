@@ -40,7 +40,8 @@
                    :additional-acceleration  100
                    :additional-time          0.1}
    :dynamic-body {:stopped-by-solids? true}
-   :camera-target true})
+   :camera-target true
+   :gem-collector true})
 
 (let [shot-template
       {:pos {:x 0

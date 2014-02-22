@@ -88,4 +88,8 @@
    :section-added
    (fn [{:keys [last-section]}]
      {:last-section
-      (inc last-section)})})
+      (inc last-section)})
+
+   :collect-gem
+   (fn [{:keys [score]}]
+     {:score (inc score)})})

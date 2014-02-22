@@ -198,3 +198,16 @@
                     (< margin (- (cam/top camera) (entity/bottom e)))
                     (< margin (- (entity/top e) (cam/bottom camera))))
             [:destroy e]))))))
+
+(defn collect-gems
+  [{:keys [entities]}]
+  (let [gem-collectors (-> entities
+                         (entities/those-with [:gem-collector]))]
+    (util/flatten-1
+      (-> entities
+        (entities/of-type :gem)
+        (entities/each
+          (fn [e]
+            (when (collision/check e gem-collectors)
+              [[:destroy e]
+               [:collect-gem]])))))))
