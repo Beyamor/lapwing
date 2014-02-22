@@ -169,3 +169,17 @@
           (fn [beast]
             (when (collision/check beast players)
               [[:end]])))))))
+
+(defn remove-passed-entities
+  [{:keys [entities]}]
+  (let [margin    100
+        beast     (-> entities
+                    (entities/of-type :beast)
+                    entities/get-first)
+        boundary    (- (entity/left beast) margin)]
+    (-> entities
+      (entities/filter :remove-when-passed?)
+      (entities/each
+        (fn [e]
+          (when (< (entity/right e) boundary)
+            [:destroy e]))))))

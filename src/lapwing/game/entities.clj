@@ -11,7 +11,8 @@
        :debug-rect "#1A4469"
        :hitbox {:width   unit-width
                 :height  unit-width}
-       :solid? true}]
+       :solid? true
+       :remove-when-passed? true}]
   (defn wall
     [x y]
     (-> wall-template

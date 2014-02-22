@@ -104,6 +104,10 @@
   (for [e (list es)]
     (f e)))
 
+(defn get-first
+  [es]
+  (-> es list first))
+
 ;
 ;           Maps are the simplest collections, yo
 ;
