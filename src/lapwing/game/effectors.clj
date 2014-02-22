@@ -81,9 +81,9 @@
    :center-camera-on
    (fn [{:keys [entities camera]} who]
      {:camera
-      (cam/center
-        camera
-        (-> entities (entities/get who) :pos))})
+      (-> camera
+        (cam/center-x
+          (-> entities (entities/get who) :pos :x)))})
    
    :section-added
    (fn [{:keys [last-section]}]

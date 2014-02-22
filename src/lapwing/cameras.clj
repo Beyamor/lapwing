@@ -13,11 +13,19 @@
   [camera {:keys [x y]}]
   (assoc camera :x x :y y))
 
+(defn center-x
+  [camera x]
+  (assoc camera :x (- x (half-width camera))))
+
+(defn center-y
+  [camera y]
+  (assoc camera :y (- y (half-height camera))))
+
 (defn center
-  [camera {center-x :x center-y :y}]
-  (move-to camera
-           {:x (- center-x (half-width camera))
-            :y (- center-y (half-height camera))}))
+  [camera x y]
+  (-> camera
+    (center-x x)
+    (center-y y)))
 
 (defn left
   [camera]
