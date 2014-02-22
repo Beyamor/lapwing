@@ -113,7 +113,8 @@
                          game-systems/update-fsm
                          game-systems/move-dynamic-bodies
                          game-systems/move-camera
-                         game-systems/extend-level])]
+                         game-systems/extend-level
+                         game-systems/pace-the-beast])]
       (send render-state (constantly game-state))
       ; eat up the remaning time
       (let [remaining-time (- 1/30

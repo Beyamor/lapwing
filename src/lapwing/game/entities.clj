@@ -62,8 +62,9 @@
 (def the-beast
   {:pos {:x -100
          :y 0}
-   :vel {:x 30
+   :vel {:x 100
          :y 0}
+   :type :beast
    :hitbox {:width 100
             :height 600}
    :debug-rect "yellow"
