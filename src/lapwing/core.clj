@@ -198,9 +198,15 @@
 (defn create-extension
   [section-index]
   (->
-    (for [x (range 0 section-width game-entities/unit-width)
-          :let [y (- window-height game-entities/unit-width)]]
-      (game-entities/wall x y))
+    (concat 
+      (for [x (range 0 section-width game-entities/unit-width)
+            :let [y (- window-height game-entities/unit-width)]]
+        (game-entities/wall x y))
+      (take (rand-int 20)
+            (repeatedly
+              #(let [x (rand section-width)
+                     y (rand window-height)]
+                 (game-entities/wall x y)))))
     (add-section-offsets section-index)
     wrap-as-create-statements))
 
