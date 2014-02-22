@@ -3,5 +3,4 @@
 
 (defs
   window-width  800
-  window-height 600
-  section-width window-width)
+  window-height 600)

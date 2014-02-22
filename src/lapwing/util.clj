@@ -27,3 +27,10 @@
   [& defs]
   `(do ~@(for [[name value] (partition 2 defs)]
            `(def ~name ~value))))
+
+(defn indexed
+  [s]
+  (map-indexed
+    (fn [index value]
+      [index value])
+    s))

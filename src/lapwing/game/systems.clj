@@ -7,6 +7,7 @@
             [lapwing.entity.fsm :as fsm]
             [lapwing.input :as input]
             [lapwing.game.entities :as game-entities]
+            [lapwing.game.sections :as sections]
             [lapwing.cameras :as cam]
             [lonocloud.synthread :as ->]))
 
@@ -115,7 +116,7 @@
 
 (defn add-section-offsets
   [entities section-index]
-  (let [offset (* section-index section-width)]
+  (let [offset (* section-index sections/pixel-width)]
     (map
       #(update-in % [:pos :x] + offset)
       entities)))
@@ -127,26 +128,21 @@
 
 (defn create-extension
   [section-index]
-  (->
-    (concat 
-      (for [x (range 0 section-width game-entities/unit-width)
-            :let [y (- window-height game-entities/unit-width)]]
-        (game-entities/wall x y))
-      (take (rand-int 20)
-            (repeatedly
-              #(let [x (rand section-width)
-                     y (rand window-height)]
-                 (game-entities/wall x y)))))
-    (add-section-offsets section-index)
-    wrap-as-create-statements))
+  (let [template  (sections/any-template)]
+    (->
+      (sections/any-template)
+      sections/template->entities
+      (add-section-offsets section-index)
+      wrap-as-create-statements)))
 
 (defn extend-level
   [{:keys [entities camera last-section]}]
   (let [next-section  (-> camera
                         cam/right
-                        (/ section-width)
+                        (/ sections/pixel-width)
                         Math/floor)]
-    (when (> next-section last-section)
-      (cons
-        [:section-added]
-        (create-extension next-section)))))
+    (util/flatten-1
+      (for [i (range (- next-section last-section))]
+        (cons
+          [:section-added]
+          (create-extension next-section))))))

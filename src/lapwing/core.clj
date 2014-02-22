@@ -11,6 +11,7 @@
             [lapwing.game.entities :as game-entities]
             [lapwing.game.effectors :as game-effectors]
             [lapwing.game.systems :as game-systems]
+            [lapwing.game.sections :as sections]
             [lapwing.cameras :as cam]
             [seesaw.core :as s]
             [seesaw.color :as s.col]
@@ -28,15 +29,11 @@
 (defn create-entities
   []
   (entities/create
-    (concat
-      [(entity/create game-entities/player)]
-      (for [x (range 0 window-width game-entities/unit-width)]
-        (create-wall x (- window-height game-entities/unit-width)))
-      (for [x (range 100 250 game-entities/unit-width)]
-        (create-wall x 375))
-      (for [y (range 0 600 game-entities/unit-width)]
-        (create-wall 0 y))
-      [(create-wall 500 350)])))
+    (cons
+      (entity/create game-entities/player)
+      (for [wall (sections/template->entities
+                   sections/first-section-template)]
+        (entity/create wall)))))
 
 (defn create-canvas
   [[width height] render-state input-state]
