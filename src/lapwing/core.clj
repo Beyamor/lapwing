@@ -6,7 +6,7 @@
             [lapwing.entity :as entity]
             [lapwing.entity.fsm :as fsm]
             [lapwing.input :as input]
-            [lapwing.player :as player]
+            lapwing.game.player
             [lapwing.game.entities :as game-entities]
             [lapwing.game.effectors :as game-effectors]
             [lapwing.game.systems :as game-systems]
