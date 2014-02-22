@@ -25,15 +25,12 @@
   window-width  800
   window-height 600)
 
-(defn create-wall
-  [x y]
-  (entity/create (game-entities/wall x y)))
-
 (defn create-entities
   []
   (entities/create
-    (cons
-      (entity/create game-entities/player)
+    (concat
+      [(entity/create game-entities/player)
+       (entity/create game-entities/the-beast)]
       (for [wall (sections/template->entities
                    sections/first-section-template)]
         (entity/create wall)))))

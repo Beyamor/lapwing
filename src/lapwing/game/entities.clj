@@ -58,3 +58,13 @@
              (assoc :x x :y y))
       (->/in [:vel]
              (assoc :x (* 500 (util/direction->int direction)))))))
+
+(def the-beast
+  {:pos {:x -100
+         :y 0}
+   :vel {:x 30
+         :y 0}
+   :hitbox {:width 100
+            :height 600}
+   :debug-rect "yellow"
+   :dynamic-body {:stopped-by-solids? false}})
