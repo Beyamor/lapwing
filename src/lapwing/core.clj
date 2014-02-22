@@ -68,12 +68,17 @@
                                                                (.fillRect (- (:x pos) (:x camera))
                                                                           (- (:y pos) (:y camera))
                                                                           (:width hitbox) (:height hitbox))))))))
-                                                   (when time-delta
-                                                     (doto g
-                                                       (.setColor (s.col/color "blue"))
-                                                       (.fillRect 0 0 20 20)
+                                                   (doseq [[i [label thing]] (util/indexed
+                                                                               [["FPS" (if time-delta
+                                                                                         (-> time-delta / int str)
+                                                                                         0)]
+                                                                                ["Entities" (if entities
+                                                                                              (count (entities/list entities))
+                                                                                              0)]])]
+                                                     (doto ^java.awt.Graphics2D g
                                                        (.setColor (s.col/color "white"))
-                                                       (.drawString (-> time-delta / int str) 3 15))))))
+                                                       (.drawString (str label ":" thing)
+                                                                    3 (+ (* 20 i) 15)))))))
                                      :listen  [:key-pressed   (set-key-state! :down)
                                                :key-released  (set-key-state! :up)])]
     (.setFocusable canvas true)
