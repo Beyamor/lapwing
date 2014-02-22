@@ -34,3 +34,7 @@
     (fn [index value]
       [index value])
     s))
+
+(defn now
+  []
+  (/ (System/nanoTime) 1000000000))

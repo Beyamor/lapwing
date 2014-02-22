@@ -157,3 +157,15 @@
             (when (> (- (cam/left camera) (entity/right beast))
                      margin)
               [[:move beast {:x (- (cam/left camera) margin)}]])))))))
+
+(defn check-for-getting-eaten
+  [{:keys [entities]}]
+  (let [players (-> entities
+                  (entities/of-type :player))]
+    (util/flatten-1
+      (-> entities
+        (entities/of-type :beast)
+        (entities/each
+          (fn [beast]
+            (when (collision/check beast players)
+              [[:end]])))))))

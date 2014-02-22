@@ -1,5 +1,5 @@
 (ns lapwing.core
-  (:require [lapwing.util :as util :refer [defs]]
+  (:require [lapwing.util :as util :refer [defs now]]
             [lapwing.image :as image]
             [lapwing.entities :as entities]
             [lapwing.entities.collisions :as collision]
@@ -35,6 +35,13 @@
                    sections/first-section-template)]
         (entity/create wall)))))
 
+(defn create-initial-game-state
+  []
+  {:entities      (create-entities)
+   :camera        (cam/simple-camera window-width window-height)
+   :time          (now)
+   :last-section  0})
+
 (defn create-canvas
   [[width height] render-state input-state]
   (let [set-key-state! (fn [state]
@@ -61,11 +68,12 @@
                                                                (.fillRect (- (:x pos) (:x camera))
                                                                           (- (:y pos) (:y camera))
                                                                           (:width hitbox) (:height hitbox))))))))
-                                                   (doto g
-                                                     (.setColor (s.col/color "blue"))
-                                                     (.fillRect 0 0 20 20)
-                                                     (.setColor (s.col/color "white"))
-                                                     (.drawString (-> time-delta / int str) 3 15)))))
+                                                   (when time-delta
+                                                     (doto g
+                                                       (.setColor (s.col/color "blue"))
+                                                       (.fillRect 0 0 20 20)
+                                                       (.setColor (s.col/color "white"))
+                                                       (.drawString (-> time-delta / int str) 3 15))))))
                                      :listen  [:key-pressed   (set-key-state! :down)
                                                :key-released  (set-key-state! :up)])]
     (.setFocusable canvas true)
@@ -74,6 +82,10 @@
         (s/repaint! canvas))
       :delay 17)
     canvas))
+
+(defn contains-end-statement?
+  [statements]
+  (some #(= :end (first %)) statements))
 
 (defn effect-statements
   [game-state statements] 
@@ -85,16 +97,9 @@
     game-state
     (filter identity statements)))
 
-(defn now
-  []
-  (/ (System/nanoTime) 1000000000))
-
 (defn run
   [render-state input-state]
-  (loop [game-state {:entities      (create-entities)
-                     :camera        (cam/simple-camera window-width window-height)
-                     :time          (now)
-                     :last-section  0}]
+  (loop [game-state (create-initial-game-state)]
     (let [start-time  (now)
           time-delta    (- start-time (:time game-state))
           game-state    (assoc game-state
@@ -104,8 +109,10 @@
           es          (:entities game-state)
           game-state  (reduce
                         (fn [game-state produce]
-                          (effect-statements game-state
-                                             (produce game-state)))
+                          (let [statements (produce game-state)]
+                            (if (contains-end-statement? statements)
+                              (create-initial-game-state)
+                              (effect-statements game-state statements))))
                         game-state
                         [game-systems/update-key-walkers
                          game-systems/update-key-shooters
@@ -114,7 +121,8 @@
                          game-systems/move-dynamic-bodies
                          game-systems/move-camera
                          game-systems/extend-level
-                         game-systems/pace-the-beast])]
+                         game-systems/pace-the-beast
+                         game-systems/check-for-getting-eaten])]
       (send render-state (constantly game-state))
       ; eat up the remaning time
       (let [remaining-time (- 1/30

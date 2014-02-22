@@ -19,7 +19,8 @@
              (assoc :x x :y y)))))
 
 (def player
-  {:pos {:x 300
+  {:type :player
+   :pos {:x 300
          :y 300}
    :vel {:x 0
          :y 0}
