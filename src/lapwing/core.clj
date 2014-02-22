@@ -38,7 +38,8 @@
 (defn create-initial-game-state
   []
   {:entities      (create-entities)
-   :camera        (cam/simple-camera window-width window-height)
+   :camera        (-> (cam/simple-camera window-width window-height)
+                    (cam/move-to 0 (- sections/pixel-height window-height)))
    :time          (now)
    :last-section  0})
 

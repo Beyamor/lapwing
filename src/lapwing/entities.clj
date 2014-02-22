@@ -145,7 +145,7 @@
 ;
 (declare empty-spatial-entity-collection)
 
-(def grid-size 50)
+(def grid-size 25)
 
 (defn grid-dims
   [left right top bottom]

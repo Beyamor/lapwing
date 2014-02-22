@@ -2,7 +2,7 @@
   (:require [lapwing.util :as util]
             [lonocloud.synthread :as ->]))
 
-(def unit-width 48)
+(def unit-width 32)
 
 (let [wall-template
       {:type :wall
@@ -21,8 +21,8 @@
 
 (def player
   {:type :player
-   :pos {:x 300
-         :y 300}
+   :pos {:x 100
+         :y 100}
    :vel {:x 0
          :y 0}
    :key-walker {:speed      300

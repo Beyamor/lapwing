@@ -10,7 +10,7 @@
   (/ (:height camera) 2))
 
 (defn move-to
-  [camera {:keys [x y]}]
+  [camera x y]
   (assoc camera :x x :y y))
 
 (defn center-x

@@ -144,7 +144,7 @@
       (for [i (range (- next-section last-section))]
         (cons
           [:section-added]
-          (create-extension next-section))))))
+          (create-extension (+ last-section i 1)))))))
 
 (let [margin 500]
   (defn pace-the-beast
