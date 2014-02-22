@@ -52,7 +52,8 @@
                 :height 16}
        :dynamic-body {:stopped-by-solids? true}
        :collision-handler (fn [self other]
-                            [[:destroy self]])}]
+                            [[:destroy self]])
+       :remove-when-offscreen? true}]
   (defn shot
     [x y direction]
     (-> shot-template

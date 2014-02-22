@@ -170,16 +170,31 @@
             (when (collision/check beast players)
               [[:end]])))))))
 
-(defn remove-passed-entities
-  [{:keys [entities]}]
-  (let [margin    100
-        beast     (-> entities
-                    (entities/of-type :beast)
-                    entities/get-first)
-        boundary    (- (entity/left beast) margin)]
+(let [margin 100]
+  (defn remove-passed-entities
+    [{:keys [entities]}]
+    (let [beast     (-> entities
+                      (entities/of-type :beast)
+                      entities/get-first)
+          boundary    (- (entity/left beast) margin)]
+      (-> entities
+        (entities/those-with [:remove-when-passed?])
+        (entities/filter :remove-when-passed?)
+        (entities/each
+          (fn [e]
+            (when (< (entity/right e) boundary)
+              [:destroy e])))))))
+
+(let [margin 200]
+  (defn remove-offscreen-entities
+    [{:keys [entities camera]}]
     (-> entities
-      (entities/filter :remove-when-passed?)
+      (entities/those-with [:remove-when-offscreen?])
+      (entities/filter :remove-when-offscreen?)
       (entities/each
         (fn [e]
-          (when (< (entity/right e) boundary)
+          (when (or (< margin (- (cam/left camera) (entity/right e)))
+                    (< margin (- (entity/left e) (cam/right camera)))
+                    (< margin (- (cam/top camera) (entity/bottom e)))
+                    (< margin (- (entity/top e) (cam/bottom camera))))
             [:destroy e]))))))

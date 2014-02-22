@@ -129,6 +129,7 @@
                          game-systems/extend-level
                          game-systems/pace-the-beast
                          game-systems/remove-passed-entities
+                         game-systems/remove-offscreen-entities
                          game-systems/check-for-getting-eaten])]
       (send render-state (constantly game-state))
       ; eat up the remaning time
