@@ -53,7 +53,7 @@
                                                (let [{:keys [entities time-delta camera]} @render-state]
                                                  (when entities
                                                    (doto g
-                                                     (.setBackground (s.col/color "white"))
+                                                     (.setBackground (s.col/color "#0B0A1C"))
                                                      (.clearRect 0 0 width height))
                                                    (dorun
                                                      (-> entities

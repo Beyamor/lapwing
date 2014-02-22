@@ -8,7 +8,7 @@
       {:type :wall
        :pos {:x 0
              :y 0}
-       :debug-rect "black"
+       :debug-rect "#1A4469"
        :hitbox {:width   unit-width
                 :height  unit-width}
        :solid? true}]
@@ -29,7 +29,7 @@
    :key-shooter {:can-shoot?  true
                  :shot-delay  0.2}
    :direction :right
-   :debug-rect "red"
+   :debug-rect "#ED95BA"
    :gravity true
    :hitbox {:width  unit-width
             :height unit-width}
@@ -46,7 +46,7 @@
              :y 0}
        :vel {:x 0
              :y 0}
-       :debug-rect "green"
+       :debug-rect "#F0D148"
        :hitbox {:width 16
                 :height 16}
        :dynamic-body {:stopped-by-solids? true}
@@ -68,5 +68,5 @@
    :type :beast
    :hitbox {:width 100
             :height 600}
-   :debug-rect "yellow"
+   :debug-rect "#6CBDF0"
    :dynamic-body {:stopped-by-solids? false}})
