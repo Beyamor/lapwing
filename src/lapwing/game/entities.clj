@@ -2,7 +2,7 @@
   (:require [lapwing.util :as util]
             [lonocloud.synthread :as ->]))
 
-(def unit-width 32)
+(def unit-width 24)
 
 (let [wall-template
       {:type :wall
@@ -36,9 +36,9 @@
             :height unit-width}
    :state-machine {:name            :player
                    :initial-state   :falling}
-   :player-jumper {:initial-acceleration     6000
-                   :additional-acceleration  150
-                   :additional-time          0.3}
+   :player-jumper {:initial-acceleration     4000
+                   :additional-acceleration  100
+                   :additional-time          0.1}
    :dynamic-body {:stopped-by-solids? true}
    :camera-target true})
 
