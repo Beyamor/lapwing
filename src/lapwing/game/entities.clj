@@ -35,7 +35,7 @@
             :height unit-width}
    :state-machine {:name   :player
                    :state  :falling}
-   :player-jumper {:initial-acceleration     5500
+   :player-jumper {:initial-acceleration     6000
                    :additional-acceleration  150
                    :additional-time          0.3}
    :dynamic-body {:stopped-by-solids? true}
