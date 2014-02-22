@@ -1,4 +1,5 @@
 (ns lapwing.core
+  (:use lapwing.game.constants)
   (:require [lapwing.util :as util :refer [defs]]
             [lapwing.image :as image]
             [lapwing.entities :as entities]
@@ -8,6 +9,8 @@
             [lapwing.input :as input]
             [lapwing.player :as player]
             [lapwing.game.entities :as game-entities]
+            [lapwing.game.effectors :as game-effectors]
+            [lapwing.game.systems :as game-systems]
             [lapwing.cameras :as cam]
             [seesaw.core :as s]
             [seesaw.color :as s.col]
@@ -17,11 +20,6 @@
   (:gen-class :main true))
 
 (set! *warn-on-reflection* true)
-
-(defs
-  window-width  800
-  window-height 600
-  section-width window-width)
 
 (defn create-wall
   [x y]
@@ -80,236 +78,11 @@
       :delay 17)
     canvas))
 
-(defn update-key-walkers
-  [{:keys [entities input-state]}]
-  (let [dx (+ (if (input/is-down? input-state :move-left)
-                -1 0)
-              (if (input/is-down? input-state :move-right)
-                1 0))
-        direction (if (neg? dx) :left :right)]
-    (util/flatten-1
-      (-> entities
-        (entities/those-with [:key-walker :vel])
-        (entities/filter #(-> % :key-walker :can-walk?))
-        (entities/each
-          (fn [{{:keys [speed]} :key-walker :as e}]
-            (concat
-              [[:accelerate e {:x (* speed dx)
-                               :relative? false}]
-               (when (and (not (zero? dx))
-                          (entity/has-component? e :direction))
-                 [:set e [:direction] direction])])))))))
-
-(defn update-key-shooters
-  [{:keys [entities input-state time]}]
-  (when (input/is-down? input-state :shoot)
-    (util/flatten-1
-      (-> entities
-        (entities/those-with [:key-shooter :pos :direction])
-        (entities/each
-          (fn [{{:keys [delay-start shot-delay] :or {delay-start 0}} :key-shooter :as e}]
-            (when (>= (- time delay-start) shot-delay)
-              [[:create (game-entities/shot (-> e :pos :x) (-> e :pos :y) (:direction e))]
-               [:set e [:key-shooter :delay-start] time]])))))))
-
-(defn move-along-dimension
-  [e dim distance dir solids]
-  (loop [distance distance, e e]
-    (if (pos? distance)
-      (let [e- (update-in e [:pos dim] dir)]
-        (if-let [collison (collision/check e- solids)]
-          [e collison]
-          (recur (dec distance) e-)))
-      [e])))
-
-(defn move-dynamic-bodies
-  [{:keys [entities time-delta]}]
-  (let [solids (entities/filter entities :solid?)]
-    (util/flatten-1
-      (-> entities
-        (entities/those-with [:pos :vel :dynamic-body])
-        (entities/each
-          (fn [{{vx :x vy :y} :vel {:keys [stopped-by-solids?]} :dynamic-body :as e}]
-            (if stopped-by-solids?
-              (let [x-dir   (if (pos? vx) inc dec)
-                    y-dir   (if (pos? vy) inc dec)
-                    x-step  (-> vx (* time-delta) double Math/abs Math/floor)
-                    y-step  (-> vy (* time-delta) double Math/abs Math/floor)]
-                (when (or (pos? x-step) (pos? y-step))
-                  (let [[e x-collision] (move-along-dimension e :x x-step x-dir solids)
-                        [e y-collision] (move-along-dimension e :y y-step y-dir solids)]
-                    (concat
-                      [[:move e (:pos e)]]
-                      (when x-collision
-                        (concat
-                          [[:set e [:vel :x] 0]]
-                          (when (entity/has-component? e :collision-handler)
-                            ((:collision-handler e) e x-collision))))
-                      (when y-collision
-                        (concat
-                          [[:set e [:vel :y] 0]]
-                          (when (entity/has-component? e :collision-handler)
-                            ((:collision-handler e) e y-collision))))))))
-              [[:move e {:x vx
-                         :y vy
-                         :relative? true}]])))))))
-
-(def gravity {:y 800})
-
-(defn apply-gravity
-  [{:keys [entities]}]
-  (util/flatten-1
-    (-> entities
-      (entities/those-with [:vel :gravity])
-      (entities/filter :gravity)
-      (entities/each
-        (fn [e]
-          [[:accelerate e gravity]])))))
-
-(defn update-fsm
-  [{:keys [entities] :as game-state}]
-  (util/flatten-1
-    (-> entities
-      (entities/those-with [:state-machine])
-      (entities/each
-        #(fsm/update % game-state)))))
-
-(defn move-camera
-  [{:keys [entities]}]
-  (util/flatten-1
-    (-> entities
-      (entities/those-with [:camera-target :pos])
-      (entities/each
-        (fn [e]
-          [[:center-camera-on e]])))))
-
-(defn add-section-offsets
-  [entities section-index]
-  (let [offset (* section-index section-width)]
-    (map
-      #(update-in % [:pos :x] + offset)
-      entities)))
-
-(defn wrap-as-create-statements
-  [entities]
-  (for [entity entities]
-    [:create entity]))
-
-(defn create-extension
-  [section-index]
-  (->
-    (concat 
-      (for [x (range 0 section-width game-entities/unit-width)
-            :let [y (- window-height game-entities/unit-width)]]
-        (game-entities/wall x y))
-      (take (rand-int 20)
-            (repeatedly
-              #(let [x (rand section-width)
-                     y (rand window-height)]
-                 (game-entities/wall x y)))))
-    (add-section-offsets section-index)
-    wrap-as-create-statements))
-
-(defn extend-level
-  [{:keys [entities camera last-section]}]
-  (let [next-section  (-> camera
-                        cam/right
-                        (/ section-width)
-                        Math/floor)]
-    (when (> next-section last-section)
-      (cons
-        [:section-added]
-        (create-extension next-section)))))
-
-(def effectors
-  {:create
-   (fn [{:keys [entities]} components]
-     {:entities
-      (entities/add entities (entity/create components))})
-
-   :destroy
-   (fn [{:keys [entities]} e]
-     {:entities
-      (entities/remove entities e)})
-
-   :move
-   (fn [{:keys [entities time-delta]} who {:keys [x y relative?]}]
-     {:entities
-      (let [update (if relative?
-                     #(update-in %1 [:pos %2] + (* time-delta %3))
-                     #(assoc-in %1 [:pos %2] %3))]
-        (-> entities
-          (entities/update-only
-            who
-            #(-> %
-               (->/when x
-                        (update :x x))
-               (->/when y
-                        (update :y y))))))})
-
-   :accelerate
-   (fn [{:keys [entities time-delta]} who {:keys [x y relative?]
-                                           :or {relative? true}}]
-     {:entities
-      (let [update (if relative?
-                     #(update-in %1 [:vel %2] + (* time-delta %3))
-                     #(assoc-in %1 [:vel %2] %3))]
-        (-> entities
-          (entities/update-only
-            who
-            #(-> %
-               (->/when x
-                        (update :x x))
-               (->/when y
-                        (update :y y))))))})
-
-   :set
-   (fn [{:keys [entities]} who & specs]
-     {:entities
-      (-> entities
-        (entities/update-only
-          who
-          #(reduce
-             (fn [entity [path value]]
-               (assoc-in entity path value))
-             % (partition 2 specs))))})
-
-   :update
-   (fn [{:keys [entities]} who & specs]
-     {:entities
-      (-> entities
-        (entities/update-only
-          who
-          #(reduce
-             (fn [entity [path f]]
-               (update-in entity path f))
-             % (partition 2 specs))))})
-
-   :store-time
-   (fn [{:keys [entities time]} who path]
-     {:entities
-      (-> entities
-        (entities/update-only
-          who
-          #(assoc-in % path time)))})
-   
-   :center-camera-on
-   (fn [{:keys [entities camera]} who]
-     {:camera
-      (cam/center
-        camera
-        (-> entities (entities/get who) :pos))})
-   
-   :section-added
-   (fn [{:keys [last-section]}]
-     {:last-section
-      (inc last-section)})})
-
 (defn effect-statements
   [game-state statements] 
   (reduce
     (fn [game-state [statement-type & data]]
-      (if-let [effector (get effectors statement-type)]
+      (if-let [effector (get game-effectors/all statement-type)]
         (merge game-state (apply effector game-state data))
         (throw (Exception. (str "No effector for " statement-type)))))
     game-state
@@ -337,13 +110,13 @@
                           (effect-statements game-state
                                              (produce game-state)))
                         game-state
-                        [update-key-walkers
-                         update-key-shooters
-                         apply-gravity
-                         update-fsm
-                         move-dynamic-bodies
-                         move-camera
-                         extend-level])]
+                        [game-systems/update-key-walkers
+                         game-systems/update-key-shooters
+                         game-systems/apply-gravity
+                         game-systems/update-fsm
+                         game-systems/move-dynamic-bodies
+                         game-systems/move-camera
+                         game-systems/extend-level])]
       (send render-state (constantly game-state))
       ; eat up the remaning time
       (let [remaining-time (- 1/30
