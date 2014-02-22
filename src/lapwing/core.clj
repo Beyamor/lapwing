@@ -33,7 +33,7 @@
     (concat
       [(entity/create game-entities/player)]
       (for [x (range 0 window-width game-entities/unit-width)]
-        (create-wall x 500))
+        (create-wall x (- window-height game-entities/unit-width)))
       (for [x (range 100 250 game-entities/unit-width)]
         (create-wall x 375))
       (for [y (range 0 600 game-entities/unit-width)]
@@ -195,7 +195,7 @@
         (for [x (range (* next-section section-width)
                        (* (inc next-section) section-width)
                        game-entities/unit-width)]
-          [:create (game-entities/wall x 500)])))))
+          [:create (game-entities/wall x (- window-height game-entities/unit-width))])))))
 
 (def effectors
   {:create
