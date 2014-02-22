@@ -1,5 +1,4 @@
 (ns lapwing.game.systems
-  (:use lapwing.game.constants)
   (:require [lapwing.util :as util]
             [lapwing.entities :as entities]
             [lapwing.entities.collisions :as collision]

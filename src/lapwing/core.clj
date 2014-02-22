@@ -1,5 +1,4 @@
 (ns lapwing.core
-  (:use lapwing.game.constants)
   (:require [lapwing.util :as util :refer [defs]]
             [lapwing.image :as image]
             [lapwing.entities :as entities]
@@ -21,6 +20,10 @@
   (:gen-class :main true))
 
 (set! *warn-on-reflection* true)
+
+(defs
+  window-width  800
+  window-height 600)
 
 (defn create-wall
   [x y]
