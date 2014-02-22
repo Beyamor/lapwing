@@ -19,8 +19,9 @@
 (set! *warn-on-reflection* true)
 
 (defs
-  window-width 800
-  window-height 600)
+  window-width  800
+  window-height 600
+  section-width window-width)
 
 (defn create-wall
   [x y]
@@ -183,20 +184,18 @@
           [[:center-camera-on e]])))))
 
 (defn extend-level
-  [{:keys [entities camera]}]
-  (let [left    (+ (:x camera) (:width camera))
-        right   (+ left (:width camera))
-        top     0
-        bottom  600
-        walls   (-> entities
-                  (entities/of-type :wall)
-                  (entities/in-region
-                    left right top bottom)
-                  entities/list)]
-    (when (empty? walls)
-      (for [x (range left right game-entities/unit-width)
-            :let [y 500]]
-        [:create (game-entities/wall x y)]))))
+  [{:keys [entities camera last-section]}]
+  (let [next-section  (-> camera
+                        cam/right
+                        (/ section-width)
+                        Math/floor)]
+    (when (> next-section last-section)
+      (cons
+        [:section-added]
+        (for [x (range (* next-section section-width)
+                       (* (inc next-section) section-width)
+                       game-entities/unit-width)]
+          [:create (game-entities/wall x 500)])))))
 
 (def effectors
   {:create
@@ -275,7 +274,12 @@
      {:camera
       (cam/center
         camera
-        (-> entities (entities/get who) :pos))})})
+        (-> entities (entities/get who) :pos))})
+   
+   :section-added
+   (fn [{:keys [last-section]}]
+     {:last-section
+      (inc last-section)})})
 
 (defn effect-statements
   [game-state statements] 
@@ -293,9 +297,10 @@
 
 (defn run
   [render-state input-state]
-  (loop [game-state {:entities  (create-entities)
-                     :camera    (cam/simple-camera window-width window-height)
-                     :time      (now)}]
+  (loop [game-state {:entities      (create-entities)
+                     :camera        (cam/simple-camera window-width window-height)
+                     :time          (now)
+                     :last-section  0}]
     (let [start-time  (now)
           time-delta    (- start-time (:time game-state))
           game-state    (assoc game-state
