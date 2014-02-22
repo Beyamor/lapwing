@@ -44,5 +44,7 @@
 
 (defn update
   [{:keys [state-machine] :as entity} & args]
-  (let [update (:update (fsm-spec (:name state-machine) (:state state-machine)))]
-    (apply update entity args)))
+  (if-not (:state state-machine)
+    (change-state entity (:initial-state state-machine))
+    (let [update (:update (fsm-spec (:name state-machine) (:state state-machine)))]
+      (apply update entity args))))
