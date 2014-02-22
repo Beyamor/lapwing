@@ -41,7 +41,8 @@
    :camera        (-> (cam/simple-camera window-width window-height)
                     (cam/move-to 0 (- sections/pixel-height window-height)))
    :time          (now)
-   :last-section  0})
+   :last-section  0
+   :score         0})
 
 (defn create-canvas
   [[width height] render-state input-state]
