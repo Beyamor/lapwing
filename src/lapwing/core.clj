@@ -183,6 +183,27 @@
         (fn [e]
           [[:center-camera-on e]])))))
 
+(defn add-section-offsets
+  [entities section-index]
+  (let [offset (* section-index section-width)]
+    (map
+      #(update-in % [:pos :x] + offset)
+      entities)))
+
+(defn wrap-as-create-statements
+  [entities]
+  (for [entity entities]
+    [:create entity]))
+
+(defn create-extension
+  [section-index]
+  (->
+    (for [x (range 0 section-width game-entities/unit-width)
+          :let [y (- window-height game-entities/unit-width)]]
+      (game-entities/wall x y))
+    (add-section-offsets section-index)
+    wrap-as-create-statements))
+
 (defn extend-level
   [{:keys [entities camera last-section]}]
   (let [next-section  (-> camera
@@ -192,10 +213,7 @@
     (when (> next-section last-section)
       (cons
         [:section-added]
-        (for [x (range (* next-section section-width)
-                       (* (inc next-section) section-width)
-                       game-entities/unit-width)]
-          [:create (game-entities/wall x (- window-height game-entities/unit-width))])))))
+        (create-extension next-section)))))
 
 (def effectors
   {:create
