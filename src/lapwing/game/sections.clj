@@ -1,6 +1,7 @@
 (ns lapwing.game.sections
   (:use [lapwing.util :only [indexed defs]])
-  (:require [lapwing.game.entities :as game-entities]))
+  (:require [lapwing.game.entities :as game-entities]
+            [lapwing.entity :as entity]))
 
 (defs
   width         8
@@ -77,16 +78,34 @@
   []
   (rand-nth all-templates))
 
-(defn realize-template
+(defn grid->world-pos
+  [x y]
+  [(* x game-entities/unit-width)
+   (* y game-entities/unit-width)])
+
+(defn walls
   [template]
   (for [[x y :as xy]  xs-and-ys
         :let          [symbol (get template xy)]
-        :when         (not (#{:_} symbol))]
-    (case symbol
-      :w (game-entities/wall
-           (* x game-entities/unit-width)
-           (* y game-entities/unit-width))
+        :when         (= symbol :w)
+        :let          [[x y] (grid->world-pos x y)]]
+    (game-entities/wall
+      x y)))
 
-      :g (game-entities/gem
-           (* x game-entities/unit-width)
-           (* y game-entities/unit-width)))))
+(defn gems
+  [template]
+  (for [[x y :as xy]  xs-and-ys
+        :let          [symbol (get template xy)]
+        :when         (= symbol :g)
+        :let          [[x y]  (grid->world-pos x y)
+                       gem    (game-entities/gem x y)]]
+        (-> gem
+          (update-in [:pos :y] + (- game-entities/unit-width
+                                    (entity/height gem))))))
+
+
+(defn realize-template
+  [template]
+  (concat
+    (walls template)
+    (gems template)))

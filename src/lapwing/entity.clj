@@ -22,6 +22,18 @@
   [e components]
   (every? #(has-component? e %) components))
 
+(defn width
+  [e]
+  (-> 0
+    (->/when (has-component? e :hitbox)
+             (+ (-> e :hitbox :width)))))
+
+(defn height
+  [e]
+  (-> 0
+    (->/when (has-component? e :hitbox)
+             (+ (-> e :hitbox :height)))))
+
 (defn left
   [e]
   (-> 0
@@ -33,7 +45,7 @@
   (-> e
     left
     (->/when (has-component? e :hitbox)
-             (+ (-> e :hitbox :width))
+             (+ (width e))
              (- 0.0001))))
 
 (defn top
@@ -47,7 +59,7 @@
   (-> e
     top
     (->/when (has-component? e :hitbox)
-             (+ (-> e :hitbox :height))
+             (+ (height e))
              (- 0.0001))))
 
 (defn collide?
