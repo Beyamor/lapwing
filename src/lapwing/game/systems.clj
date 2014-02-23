@@ -204,9 +204,9 @@
                          (entities/those-with [:gem-collector]))]
     (util/flatten-1
       (-> entities
-        (entities/of-type :gem)
+        (entities/those-with [:gem])
         (entities/each
-          (fn [e]
-            (when (collision/check e gem-collectors)
-              [[:destroy e]
-               [:collect-gem]])))))))
+          (fn [gem]
+            (when (collision/check gem gem-collectors)
+              [[:destroy gem]
+               [:collect-gem (:gem gem)]])))))))

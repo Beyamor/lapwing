@@ -91,5 +91,5 @@
       (inc last-section)})
 
    :collect-gem
-   (fn [{:keys [score]}]
-     {:score (inc score)})})
+   (fn [{:keys [score]} {:keys [value]}]
+     {:score (+ score value)})})

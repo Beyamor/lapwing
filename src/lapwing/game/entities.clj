@@ -78,7 +78,7 @@
                            :y 0}
                      :vel {:y 0
                            :x 0}
-                     :type :gem
+                     :gem {:value 100}
                      :hitbox {:width 16
                               :height 16}
                      :debug-rect "#E38B2D"
