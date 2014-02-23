@@ -12,7 +12,8 @@
        :hitbox {:width   unit-width
                 :height  unit-width}
        :solid? true
-       :remove-when-passed? true}]
+       :remove-when-passed? true
+       :destructible? true}]
   (defn wall
     [x y]
     (-> wall-template

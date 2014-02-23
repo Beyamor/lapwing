@@ -1,7 +1,8 @@
 (ns lapwing.game.sections
   (:require [lapwing.util :as util :refer [indexed defs]]
             [lapwing.game.entities :as game-entities]
-            [lapwing.entity :as entity]))
+            [lapwing.entity :as entity]
+            [lonocloud.synthread :as ->]))
 
 (defs
   width         8
@@ -30,7 +31,7 @@
      [:w :_ :_ :_ :_ :_ :_ :_]
      [:w :_ :_ :_ :_ :_ :_ :_]
      [:w :_ :_ :_ :_ :_ :_ :_]
-     [:w :w :w :w :w :w :w :w]]))
+     [:W :W :W :W :W :W :W :W]]))
 
 (def all-templates
   (->>
@@ -42,7 +43,7 @@
       [:_ :_ :_ :_ :_ :_ :_ :_]
       [:_ :_ :w :w :w :_ :_ :_]
       [:_ :_ :w :w :w :_ :_ :_]
-      [:w :w :w :w :w :w :w :w]]
+      [:W :W :W :W :W :W :W :W]]
 
      [[:w :w :w :w :w :w :w :w]
       [:_ :_ :_ :_ :_ :_ :_ :_]
@@ -51,7 +52,7 @@
       [:_ :w :w :_ :_ :w :w :_]
       [:_ :w :w :w :_ :w :w :_]
       [:_ :_ :_ :_ :_ :w :w :_]
-      [:w :w :w :w :w :w :w :w]]
+      [:W :W :W :W :W :W :W :W]]
 
      [[:w :w :w :w :w :w :w :w]
       [:_ :_ :_ :_ :_ :_ :_ :_]
@@ -60,7 +61,7 @@
       [:_ :_ :_ :_ :_ :_ :_ :_]
       [:_ :_ :_ :w :w :_ :_ :_]
       [:_ :_ :_ :w :w :_ :_ :_]
-      [:w :w :w :w :w :w :w :w]]
+      [:W :W :W :W :W :W :W :W]]
 
      [[:w :w :w :w :w :w :w :w]
       [:w :w :_ :_ :_ :_ :_ :_]
@@ -69,7 +70,7 @@
       [:_ :_ :_ :_ :_ :_ :w :_]
       [:_ :_ :_ :_ :_ :w :w :_]
       [:_ :_ :_ :_ :_ :_ :_ :_]
-      [:w :w :w :w :w :w :w :w]]
+      [:W :W :W :W :W :W :W :W]]
      ]
 
     (map vecs->template)))
@@ -83,21 +84,19 @@
   [(* x game-entities/unit-width)
    (* y game-entities/unit-width)])
 
-(defn is-wall?
-  [symbol]
-  (= symbol :w))
-
-(defn is-empty?
-  [symbol]
-  (= symbol :_))
+(defs
+  is-wall?  #{:w :W}
+  is-empty? #{:_})
 
 (defn walls
   [template]
   (for [[x y :as xy]  xs-and-ys
         :when         (is-wall? (get template xy))
         :let          [[x y] (grid->world-pos x y)]]
-    (game-entities/wall
-      x y)))
+    (->
+      (game-entities/wall x y)
+      (->/when (= (get template xy) :W)
+               (assoc :destructible? false)))))
 
 (defn gem-position-weights
   [template]
