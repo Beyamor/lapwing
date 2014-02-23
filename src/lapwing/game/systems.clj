@@ -127,12 +127,11 @@
 
 (defn create-extension
   [section-index]
-  (let [template  (sections/any-template)]
-    (->
-      (sections/any-template)
-      sections/template->entities
-      (add-section-offsets section-index)
-      wrap-as-create-statements)))
+  (->
+    (sections/any-template)
+    sections/realize-template
+    (add-section-offsets section-index)
+    wrap-as-create-statements))
 
 (defn extend-level
   [{:keys [entities camera last-section]}]

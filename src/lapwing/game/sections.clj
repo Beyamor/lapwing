@@ -77,7 +77,7 @@
   []
   (rand-nth all-templates))
 
-(defn template->entities
+(defn realize-template
   [template]
   (for [[x y :as xy]  xs-and-ys
         :let          [symbol (get template xy)]

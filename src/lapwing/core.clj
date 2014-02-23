@@ -31,7 +31,7 @@
     (concat
       [(entity/create game-entities/player)
        (entity/create game-entities/the-beast)]
-      (for [wall (sections/template->entities
+      (for [wall (sections/realize-template
                    sections/first-section-template)]
         (entity/create wall)))))
 
