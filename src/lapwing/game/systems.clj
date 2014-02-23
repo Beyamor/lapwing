@@ -255,4 +255,17 @@
       (fn [{timer :timed-explosion :as e}]
         (when (and (:ticking timer)
                    (>= (- time (:start timer)) (:delay timer)))
-          [[:destroy e]]))))))
+          [[:destroy e]
+           [:create (game-entities/explosion
+                      (entity/x e)
+                      (entity/y e)
+                      time)]]))))))
+
+(defn remove-timers
+  [{:keys [entities time]}]
+  (-> entities
+    (entities/those-with [:timed-removal])
+    (entities/each
+      (fn [{timer :timed-removal :as e}]
+        (when (>= (- time (:start timer)) (:delay timer))
+          [:destroy e])))))

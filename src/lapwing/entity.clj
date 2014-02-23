@@ -22,6 +22,18 @@
   [e components]
   (every? #(has-component? e %) components))
 
+(defn x
+  [e]
+  (-> 0
+    (->/when (has-component? e :pos)
+             (+ (-> e :pos :x)))))
+
+(defn y
+  [e]
+  (-> 0
+    (->/when (has-component? e :pos)
+             (+ (-> e :pos :y)))))
+
 (defn width
   [e]
   (-> 0
@@ -36,9 +48,7 @@
 
 (defn left
   [e]
-  (-> 0
-    (->/when (has-component? e :pos)
-             (+ (-> e :pos :x)))))
+  (x e))
 
 (defn right
   [e]
@@ -50,9 +60,7 @@
 
 (defn top
   [e]
-  (-> 0
-    (->/when (has-component? e :pos)
-             (+ (-> e :pos :y)))))
+  (y e))
 
 (defn bottom
   [e]

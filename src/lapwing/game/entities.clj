@@ -117,3 +117,14 @@
                vy (* speed (Math/sin direction))]
               (->/in [:vel]
                      (assoc :x vx :y vy))))))
+
+(let [explosion-template
+      (mmerge pos
+              (square-hitbox 60)
+              {:debug-rect "purple"
+               :timed-removal {:delay 0.1}})]
+  (defn explosion
+    [x y start-time]
+    (-> explosion-template
+      (set-pos x y)
+      (assoc-in [:timed-removal :start] start-time))))
