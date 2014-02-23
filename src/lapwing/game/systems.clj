@@ -256,10 +256,10 @@
         (when (and (:ticking timer)
                    (>= (- time (:start timer)) (:delay timer)))
           [[:destroy e]
-           [:create (game-entities/explosion
-                      (entity/x e)
-                      (entity/y e)
-                      time)]]))))))
+           [:create (->
+                      (game-entities/explosion 0 0 time)
+                      (entity/center=
+                        (entity/center-x e) (entity/center-y e)))]]))))))
 
 (defn remove-timers
   [{:keys [entities time]}]
