@@ -120,7 +120,7 @@
 
 (let [explosion-template
       (mmerge pos
-              (square-hitbox 60)
+              (square-hitbox 80)
               {:debug-rect "purple"
                :timed-removal {:delay 0.1}
                :explosion true})]
