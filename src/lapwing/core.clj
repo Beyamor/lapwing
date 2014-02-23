@@ -150,11 +150,12 @@
         input-state   (doto (input/create-state)
                         (input/def!
                           :jump       KeyEvent/VK_X
-                          :shoot      KeyEvent/VK_C
-                          :throw      KeyEvent/VK_Z
+                          ;:shoot      KeyEvent/VK_C
+                          :throw      KeyEvent/VK_C
                           :move-left  [KeyEvent/VK_KP_LEFT  KeyEvent/VK_LEFT]
                           :move-right [KeyEvent/VK_KP_RIGHT KeyEvent/VK_RIGHT]
-                          :move-down  [KeyEvent/VK_KP_DOWN  KeyEvent/VK_DOWN]))
+                          :move-down  [KeyEvent/VK_KP_DOWN  KeyEvent/VK_DOWN]
+                          :move-up    [KeyEvent/VK_KP_UP    KeyEvent/VK_UP]))
         canvas        (create-canvas [window-width window-height] render-state input-state)]
     (doto (Thread. #(run render-state input-state))
       .start)

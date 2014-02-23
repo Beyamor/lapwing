@@ -52,11 +52,15 @@
           (fn [{{:keys [delay-start throw-delay] :or {delay-start 0}} :bomb-thrower :as e}]
             (when (and (>= (- time delay-start) throw-delay)
                        (pos? (:bomb-holder e))) 
-              [[:create (game-entities/bomb
-                          (-> e :pos :x) (-> e :pos :y)
-                          (Math/atan2 -1 (util/direction->int (:direction e))))]
-               [:update e [:bomb-holder] dec]
-               [:set e [:bomb-thrower :delay-start] time]])))))))
+              (let [direction (util/direction->angle
+                                (if (input/is-down? input-state :move-up)
+                                  :up
+                                  (:direction e)))]
+                [[:create (game-entities/bomb
+                            (-> e :pos :x) (-> e :pos :y)
+                            direction)]
+                 [:update e [:bomb-holder] dec]
+                 [:set e [:bomb-thrower :delay-start] time]]))))))))
 
 (defn move-along-dimension
   [e dim distance dir solids]

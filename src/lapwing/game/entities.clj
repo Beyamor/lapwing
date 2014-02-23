@@ -103,9 +103,7 @@
       (mmerge dynamic-body
               (square-hitbox 20)
               {:debug-rect "red"
-               :gravity true
-               :remove-when-passed? true
-               :friction 1000})]
+               :remove-when-offscreen? true})]
   (defn bomb
     [x y direction]
     (-> bomb-template

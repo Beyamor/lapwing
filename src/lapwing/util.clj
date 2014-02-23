@@ -17,11 +17,15 @@
   [s]
   (apply concat s))
 
-(defn direction->int
-  [direction]
-  (case direction
-    :left -1
-    :right 1))
+(def direction->int
+  {:left  -1
+   :right 1})
+
+(def direction->angle
+  {:right 0
+   :left  (- Math/PI)
+   :up    (* -0.5 Math/PI)
+   :down  (* 0.5 Math/PI)})
 
 (defmacro defs
   [& defs]
