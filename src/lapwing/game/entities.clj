@@ -49,7 +49,7 @@
                         :can-walk?  true}
            :key-shooter {:shot-delay  0.2}
            :bomb-thrower {:throw-delay 0.2}
-           :bomb-holder 3
+           :bomb-holder 999999999999
            :direction :right
            :debug-rect "#ED95BA"
            :gravity true
@@ -79,7 +79,8 @@
   (mmerge dynamic-body
           {:type :beast
            :pos {:x -100}
-           :vel {:x 80}
+           :vel {:x 0}
+           ;:vel {:x 80}
            :hitbox {:width 100
                     :height 600}
            :debug-rect "#6CBDF0"
@@ -103,7 +104,8 @@
               (square-hitbox 20)
               {:debug-rect "red"
                :gravity true
-               :remove-when-passed? true})]
+               :remove-when-passed? true
+               :friction 1000})]
   (defn bomb
     [x y direction]
     (-> bomb-template

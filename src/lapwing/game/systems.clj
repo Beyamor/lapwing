@@ -226,3 +226,18 @@
             (when (collision/check gem gem-collectors)
               [[:destroy gem]
                [:collect-gem (:gem gem)]])))))))
+
+(defn apply-friction
+  [{:keys [entities time-delta]}]
+  (let [walls (-> entities
+                (entities/of-type :wall))]
+    (-> entities
+      (entities/those-with [:friction])
+      (entities/each
+        (fn [{:keys [friction] :as e}]
+          (when (collision/below e walls)
+            (let [xvel (-> e :vel :x)]
+              (if (> (Math/abs xvel) (* friction time-delta))
+                [:accelerate e {:x (* friction (Math/signum xvel) -1)}]
+                [:accelerate e {:x 0
+                                :relative? false}]))))))))

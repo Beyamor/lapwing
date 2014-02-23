@@ -126,6 +126,7 @@
                          game-systems/update-key-shooters
                          game-systems/update-bomb-throwers
                          game-systems/apply-gravity
+                         game-systems/apply-friction
                          game-systems/update-fsm
                          game-systems/move-dynamic-bodies
                          game-systems/move-camera
