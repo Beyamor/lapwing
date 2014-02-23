@@ -11,6 +11,7 @@
             [lapwing.game.effectors :as game-effectors]
             [lapwing.game.systems :as game-systems]
             [lapwing.game.sections :as sections]
+            [lapwing.game.rooms :as rooms]
             [lapwing.cameras :as cam]
             [seesaw.core :as s]
             [seesaw.color :as s.col]
@@ -31,8 +32,9 @@
     (concat
       [(entity/create game-entities/player)
        (entity/create game-entities/the-beast)]
-      (for [wall (sections/realize-template
-                   sections/first-section-template)]
+      (for [wall (sections/create
+                   rooms/first-top-template
+                   rooms/first-bottom-template)]
         (entity/create wall)))))
 
 (defn create-initial-game-state

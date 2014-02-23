@@ -7,6 +7,7 @@
             [lapwing.input :as input]
             [lapwing.game.entities :as game-entities]
             [lapwing.game.sections :as sections]
+            [lapwing.game.rooms :as rooms]
             [lapwing.cameras :as cam]
             [lonocloud.synthread :as ->]))
 
@@ -154,8 +155,9 @@
 (defn create-extension
   [section-index]
   (->
-    (sections/any-template)
-    sections/realize-template
+    (sections/create
+      (rooms/any-top)
+      (rooms/any-bottom))
     (add-section-offsets section-index)
     wrap-as-create-statements))
 
