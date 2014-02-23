@@ -38,3 +38,5 @@
 (defn now
   []
   (/ (System/nanoTime) 1000000000))
+
+(def mmerge (partial merge-with merge))
