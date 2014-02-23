@@ -103,7 +103,12 @@
       (mmerge dynamic-body
               (square-hitbox 20)
               {:debug-rect "red"
-               :remove-when-offscreen? true})]
+               :remove-when-offscreen? true
+               :timed-explosion {:delay 1
+                                 :ticking false}
+               :collision-handler (fn [self other]
+                                    [[:set self [:timed-explosion :ticking] true]
+                                     [:store-time self [:timed-explosion :start]]])})]
   (defn bomb
     [x y direction]
     (-> bomb-template

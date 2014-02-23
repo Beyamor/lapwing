@@ -245,3 +245,14 @@
                 [:accelerate e {:x (* friction (Math/signum xvel) -1)}]
                 [:accelerate e {:x 0
                                 :relative? false}]))))))))
+
+(defn explode-timers
+  [{:keys [entities time]}]
+  (util/flatten-1
+  (-> entities
+    (entities/those-with [:timed-explosion :pos])
+    (entities/each
+      (fn [{timer :timed-explosion :as e}]
+        (when (and (:ticking timer)
+                   (>= (- time (:start timer)) (:delay timer)))
+          [[:destroy e]]))))))

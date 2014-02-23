@@ -135,6 +135,7 @@
                          game-systems/remove-passed-entities
                          game-systems/remove-offscreen-entities
                          game-systems/collect-gems
+                         game-systems/explode-timers
                          game-systems/check-for-getting-eaten])]
       (send render-state (constantly game-state))
       ; eat up the remaning time
