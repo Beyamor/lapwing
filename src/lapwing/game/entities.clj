@@ -47,8 +47,9 @@
            :type :player
            :key-walker {:speed      300
                         :can-walk?  true}
-           :key-shooter {:can-shoot?  true
-                         :shot-delay  0.2}
+           :key-shooter {:shot-delay  0.2}
+           :bomb-thrower {:throw-delay 0.2}
+           :bomb-holder 3
            :direction :right
            :debug-rect "#ED95BA"
            :gravity true
@@ -95,3 +96,19 @@
     [x y]
     (-> gem-template
       (set-pos x y))))
+
+(let [speed 400
+      bomb-template
+      (mmerge dynamic-body
+              (square-hitbox 20)
+              {:debug-rect "red"
+               :gravity true
+               :remove-when-passed? true})]
+  (defn bomb
+    [x y direction]
+    (-> bomb-template
+      (set-pos x y)
+      (->/let [vx (* speed (Math/cos direction))
+               vy (* speed (Math/sin direction))]
+              (->/in [:vel]
+                     (assoc :x vx :y vy))))))

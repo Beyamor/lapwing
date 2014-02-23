@@ -42,6 +42,22 @@
               [[:create (game-entities/shot (-> e :pos :x) (-> e :pos :y) (:direction e))]
                [:set e [:key-shooter :delay-start] time]])))))))
 
+(defn update-bomb-throwers
+  [{:keys [entities input-state time]}]
+  (when (input/is-down? input-state :throw)
+    (util/flatten-1
+      (-> entities
+        (entities/those-with [:bomb-thrower :pos :direction :bomb-holder])
+        (entities/each
+          (fn [{{:keys [delay-start throw-delay] :or {delay-start 0}} :bomb-thrower :as e}]
+            (when (and (>= (- time delay-start) throw-delay)
+                       (pos? (:bomb-holder e))) 
+              [[:create (game-entities/bomb
+                          (-> e :pos :x) (-> e :pos :y)
+                          (Math/atan2 -1 (util/direction->int (:direction e))))]
+               [:update e [:bomb-holder] dec]
+               [:set e [:bomb-thrower :delay-start] time]])))))))
+
 (defn move-along-dimension
   [e dim distance dir solids]
   (loop [distance distance, e e]
