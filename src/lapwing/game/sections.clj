@@ -1,6 +1,6 @@
 (ns lapwing.game.sections
-  (:use [lapwing.util :only [indexed defs]])
-  (:require [lapwing.game.entities :as game-entities]
+  (:require [lapwing.util :as util :refer [indexed defs]]
+            [lapwing.game.entities :as game-entities]
             [lapwing.entity :as entity]))
 
 (defs
@@ -37,36 +37,36 @@
     [
      [[:w :w :w :w :w :w :w :w]
       [:_ :w :w :_ :_ :_ :_ :_]
-      [:_ :_ :_ :_ :_ :_ :g :_]
+      [:_ :_ :_ :_ :_ :_ :_ :_]
       [:_ :_ :_ :_ :_ :w :w :w]
-      [:_ :_ :_ :g :_ :_ :_ :_]
+      [:_ :_ :_ :_ :_ :_ :_ :_]
       [:_ :_ :w :w :w :_ :_ :_]
-      [:_ :_ :w :w :w :_ :g :_]
+      [:_ :_ :w :w :w :_ :_ :_]
       [:w :w :w :w :w :w :w :w]]
 
      [[:w :w :w :w :w :w :w :w]
       [:_ :_ :_ :_ :_ :_ :_ :_]
-      [:_ :w :w :_ :g :w :w :_]
+      [:_ :w :w :_ :_ :w :w :_]
       [:_ :w :w :_ :w :w :w :_]
-      [:_ :w :w :g :_ :w :w :_]
+      [:_ :w :w :_ :_ :w :w :_]
       [:_ :w :w :w :_ :w :w :_]
-      [:_ :_ :_ :_ :g :w :w :_]
+      [:_ :_ :_ :_ :_ :w :w :_]
       [:w :w :w :w :w :w :w :w]]
 
      [[:w :w :w :w :w :w :w :w]
-      [:_ :_ :g :_ :g :_ :_ :_]
+      [:_ :_ :_ :_ :_ :_ :_ :_]
       [:_ :_ :w :w :w :w :_ :_]
       [:_ :_ :_ :_ :_ :_ :_ :_]
-      [:_ :_ :_ :g :_ :_ :_ :_]
+      [:_ :_ :_ :_ :_ :_ :_ :_]
       [:_ :_ :_ :w :w :_ :_ :_]
-      [:_ :_ :g :w :w :g :_ :_]
+      [:_ :_ :_ :w :w :_ :_ :_]
       [:w :w :w :w :w :w :w :w]]
 
      [[:w :w :w :w :w :w :w :w]
-      [:w :w :g :g :_ :_ :_ :_]
+      [:w :w :_ :_ :_ :_ :_ :_]
       [:w :w :w :w :w :w :_ :_]
       [:_ :_ :_ :_ :_ :_ :_ :_]
-      [:_ :_ :_ :_ :_ :g :w :_]
+      [:_ :_ :_ :_ :_ :_ :w :_]
       [:_ :_ :_ :_ :_ :w :w :_]
       [:_ :_ :_ :_ :_ :_ :_ :_]
       [:w :w :w :w :w :w :w :w]]
@@ -83,33 +83,52 @@
   [(* x game-entities/unit-width)
    (* y game-entities/unit-width)])
 
+(defn is-wall?
+  [symbol]
+  (= symbol :w))
+
+(defn is-empty?
+  [symbol]
+  (= symbol :_))
+
 (defn walls
   [template]
   (for [[x y :as xy]  xs-and-ys
-        :let          [symbol (get template xy)]
-        :when         (= symbol :w)
+        :when         (is-wall? (get template xy))
         :let          [[x y] (grid->world-pos x y)]]
     (game-entities/wall
       x y)))
 
-(defn gem-positions
+(defn gem-position-weights
   [template]
-  (for [xy    xs-and-ys
-        :when (= :g (get template xy))]
-    xy))
+  (into {}
+        (for [[x y :as xy]  xs-and-ys
+              :when         (and (is-wall? (get template xy))
+                                 (> y 0))
+              :let          [y (dec y)]
+              :when         (is-empty? (get template [x y]))] 
+          [[x y] 1])))
+
+(defn random-gem-position
+  [position-weights]
+  (->
+    (for [[position weight] position-weights]
+      (repeat weight position))
+    util/flatten-1
+    rand-nth))
 
 (let [desired-value 100]
   (defn gems
     [template]
-    (loop [gem-positions (shuffle (gem-positions template)), total-value 0, gems []]
+    (loop [position-weights (gem-position-weights template), total-value 0, gems []]
       (if (or (>= total-value desired-value)
-              (empty? gem-positions))
+              (empty? position-weights))
         gems
-        (let [[[x y] & gem-positions] gem-positions
+        (let [[x y :as xy] (random-gem-position position-weights)
               [x y] (grid->world-pos x y)
               gem   (game-entities/gem x y)]
           (recur
-            gem-positions
+            (dissoc position-weights xy)
             (+ total-value (-> gem :gem :value))
             (conj gems gem)))))))
 
