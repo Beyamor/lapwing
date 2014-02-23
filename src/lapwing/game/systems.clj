@@ -53,8 +53,14 @@
             (when (and (>= (- time delay-start) throw-delay)
                        (pos? (:bomb-holder e))) 
               (let [direction (util/direction->angle
-                                (if (input/is-down? input-state :move-up)
+                                (cond
+                                  (input/is-down? input-state :move-up)
                                   :up
+
+                                  (input/is-down? input-state :move-down)
+                                  :down
+
+                                  :else
                                   (:direction e)))]
                 [[:create (game-entities/bomb
                             (-> e :pos :x) (-> e :pos :y)
