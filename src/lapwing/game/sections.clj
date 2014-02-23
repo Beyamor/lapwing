@@ -92,17 +92,26 @@
     (game-entities/wall
       x y)))
 
-(defn gems
+(defn gem-positions
   [template]
-  (for [[x y :as xy]  xs-and-ys
-        :let          [symbol (get template xy)]
-        :when         (= symbol :g)
-        :let          [[x y]  (grid->world-pos x y)
-                       gem    (game-entities/gem x y)]]
-        (-> gem
-          (update-in [:pos :y] + (- game-entities/unit-width
-                                    (entity/height gem))))))
+  (for [xy    xs-and-ys
+        :when (= :g (get template xy))]
+    xy))
 
+(let [desired-value 100]
+  (defn gems
+    [template]
+    (loop [gem-positions (shuffle (gem-positions template)), total-value 0, gems []]
+      (if (or (>= total-value desired-value)
+              (empty? gem-positions))
+        gems
+        (let [[[x y] & gem-positions] gem-positions
+              [x y] (grid->world-pos x y)
+              gem   (game-entities/gem x y)]
+          (recur
+            gem-positions
+            (+ total-value (-> gem :gem :value))
+            (conj gems gem)))))))
 
 (defn realize-template
   [template]
