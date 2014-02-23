@@ -269,3 +269,16 @@
       (fn [{timer :timed-removal :as e}]
         (when (>= (- time (:start timer)) (:delay timer))
           [:destroy e])))))
+
+(defn explodify-explosions
+  [{:keys [entities]}]
+  (let [destructibles (-> entities
+                        (entities/those-with [:destructible?])
+                        (entities/filter :destructible?))]
+    (util/flatten-1
+      (-> entities
+        (entities/those-with [:explosion])
+        (entities/each
+          (fn [e]
+            (for [destroyed (collision/all e destructibles)]
+              [:destroy destroyed])))))))

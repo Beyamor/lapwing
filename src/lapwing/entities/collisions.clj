@@ -3,13 +3,26 @@
             [lapwing.entity :as entity]
             [lonocloud.synthread :as ->]))
 
+(defn- collides-with
+  [e]
+  (fn [other]
+    (and (not (entity/= e other))
+         (entity/collide? e other))))
+
 (defn check
   [e es]
   (-> es
     (entities/in-entity-region e)
     (entities/any?
-      #(and (not (entity/= e %))
-            (entity/collide? e %)))))
+      (collides-with e))))
+
+(defn all
+  [e es]
+  (-> es
+    (entities/in-entity-region e)
+    (entities/filter
+      (collides-with e))
+    entities/list))
 
 (def ? check)
 

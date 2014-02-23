@@ -137,6 +137,7 @@
                          game-systems/collect-gems
                          game-systems/explode-timers
                          game-systems/remove-timers
+                         game-systems/explodify-explosions
                          game-systems/check-for-getting-eaten])]
       (send render-state (constantly game-state))
       ; eat up the remaning time

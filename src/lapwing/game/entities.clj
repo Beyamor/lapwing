@@ -122,7 +122,8 @@
       (mmerge pos
               (square-hitbox 60)
               {:debug-rect "purple"
-               :timed-removal {:delay 0.1}})]
+               :timed-removal {:delay 0.1}
+               :explosion true})]
   (defn explosion
     [x y start-time]
     (-> explosion-template
