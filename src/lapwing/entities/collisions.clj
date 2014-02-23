@@ -24,32 +24,22 @@
       (collides-with e))
     entities/list))
 
-(def ? check)
-
 (defn below
   [e es]
-  (? (update-in e [:pos :y] inc)
+  (check (update-in e [:pos :y] inc)
      es))
-
-(def below? below)
 
 (defn left
   [e es]
-  (? (update-in e [:pos :x] dec)
+  (check (update-in e [:pos :x] dec)
      es))
-
-(def left? left)
 
 (defn right
   [e es]
-  (? (update-in e [:pos :x] inc)
+  (check (update-in e [:pos :x] inc)
      es))
-
-(def right? right)
 
 (defn above
   [e es]
-  (? (update-in e [:pos :y] dec)
+  (check (update-in e [:pos :y] dec)
      es))
-
-(def above? above)

@@ -12,7 +12,7 @@
                           (entity/top player))]
     (when (and (>= top-difference -10)
                (<= top-difference 5)
-               (not (collision/above? solid solids)))
+               (not (collision/above solid solids)))
       (concat
         [[:set player [:pos :y] (entity/top solid)]]
         (fsm/change-state player :grabbing)))))
@@ -25,16 +25,16 @@
                  (let [falling-down?  (pos? (-> player :vel :y))
                        solids         (entities/filter entities :solid?)]
                    (cond
-                     (collision/below? player solids)
+                     (collision/below player solids)
                      (fsm/change-state player :walking)
 
                      (and falling-down?
-                          (collision/left? player solids)
+                          (collision/left player solids)
                           (input/is-down? input-state :move-left))
                      (try-grabbing player (collision/left player solids) solids)
 
                      (and falling-down?
-                          (collision/right? player solids)
+                          (collision/right player solids)
                           (input/is-down? input-state :move-right))
                      (try-grabbing player (collision/right player solids) solids))))
 
@@ -48,7 +48,7 @@
                    (input/was-pressed? input-state :jump)
                    (fsm/change-state player :jumping)
 
-                   (not (collision/below? player (entities/filter entities :solid?)))
+                   (not (collision/below player (entities/filter entities :solid?)))
                    (fsm/change-state player :falling)))
 
          jumping
@@ -62,7 +62,7 @@
                   {:keys [input-state entities time]}]
                  (if (or (>= (- time start-time) additional-time)
                          (input/was-released? input-state :jump)
-                         (collision/above? player (entities/filter entities :solid?)))
+                         (collision/above player (entities/filter entities :solid?)))
                    (fsm/change-state player :falling)
                    [[:accelerate player {:y (* -1 additional-acceleration)}]]))
 
