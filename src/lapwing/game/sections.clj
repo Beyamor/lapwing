@@ -6,13 +6,15 @@
 
 (defs
   width         1
-  height        2
+  height        1
   pixel-width   (* width rooms/pixel-width)
   pixel-height  (* height rooms/pixel-height))
 
-(defn create
-  [top bottom]
-  (concat
-    (rooms/realize-template top)
-    (for [e (rooms/realize-template bottom)]
-      (update-in e [:pos :y] + rooms/pixel-width))))
+(defn create-random
+  []
+  (rooms/realize-template
+    (rooms/any)))
+
+(defn create-first
+  []
+  (rooms/realize-template rooms/first-room))

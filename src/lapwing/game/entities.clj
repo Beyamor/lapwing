@@ -45,7 +45,7 @@
   (mmerge dynamic-body
           unit-hitbox
           {:pos {:x 100
-                 :y 300}
+                 :y 100}
            :type :player
            :key-walker {:speed      player-speed
                         :can-walk?  true}

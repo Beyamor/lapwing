@@ -155,9 +155,7 @@
 (defn create-extension
   [section-index]
   (->
-    (sections/create
-      (rooms/any-top)
-      (rooms/any-bottom))
+    (sections/create-random)
     (add-section-offsets section-index)
     wrap-as-create-statements))
 

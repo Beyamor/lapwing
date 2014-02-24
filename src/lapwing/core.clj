@@ -38,9 +38,7 @@
     (concat
       [(entity/create game-entities/player)
        (entity/create game-entities/the-beast)]
-      (for [wall (sections/create
-                   rooms/first-top-template
-                   rooms/first-bottom-template)]
+      (for [wall (sections/create-first)]
         (entity/create wall)))))
 
 (defn create-initial-game-state
