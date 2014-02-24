@@ -81,9 +81,6 @@
   (mmerge dynamic-body
           {:type :beast
            :pos {:x -100}
-           ;:vel {:x 0}
-           ;:vel {:x 80}
-           :vel {:x (* player-speed 0.5)}
            :hitbox {:width 100
                     :height 600}
            :debug-rect "#6CBDF0"
