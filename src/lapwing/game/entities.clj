@@ -56,8 +56,8 @@
            :state-machine {:name            :player
                            :initial-state   :falling}
            :player-jumper {:initial-acceleration     4000
-                           :additional-acceleration  100
-                           :additional-time          0.1}
+                           :additional-acceleration  300
+                           :additional-time          0.2}
            :camera-target true
            :gem-collector true}))
 
