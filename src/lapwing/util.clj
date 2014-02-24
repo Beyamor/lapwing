@@ -44,3 +44,8 @@
   (/ (System/nanoTime) 1000000000))
 
 (def mmerge (partial merge-with merge))
+
+(defn lerp
+  [t a b]
+  (let [t (min t 1)]
+    (+ a (* t (- b a)))))

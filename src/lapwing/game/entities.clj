@@ -5,6 +5,8 @@
 (def unit-width 24)
 
 (util/defs
+  player-speed 300
+
   pos {:pos {:x 0
              :y 0}}
 
@@ -45,7 +47,7 @@
           {:pos {:x 100
                  :y 300}
            :type :player
-           :key-walker {:speed      300
+           :key-walker {:speed      player-speed
                         :can-walk?  true}
            :key-shooter {:shot-delay  0.2}
            :bomb-thrower {:throw-delay 0.2}
@@ -79,8 +81,9 @@
   (mmerge dynamic-body
           {:type :beast
            :pos {:x -100}
-           :vel {:x 0}
+           ;:vel {:x 0}
            ;:vel {:x 80}
+           :vel {:x (* player-speed 0.5)}
            :hitbox {:width 100
                     :height 600}
            :debug-rect "#6CBDF0"

@@ -23,8 +23,14 @@
 (set! *warn-on-reflection* true)
 
 (defs
-  window-width  800
-  window-height 600)
+  window-width          800
+  window-height         600
+  max-margin            200
+  min-margin            50
+  margin-converge-time  60
+  min-speed             0.1
+  max-speed             0.6
+  speed-converge-time   120)
 
 (defn create-entities
   []
@@ -43,8 +49,11 @@
    :camera        (-> (cam/simple-camera window-width window-height)
                     (cam/move-to 0 (- sections/pixel-height window-height)))
    :time          (now)
+   :start-time    (now)
    :last-section  0
-   :score         0})
+   :score         0
+   :beast-margin  50
+   :beast-speed   0.2})
 
 (defn create-canvas
   [[width height] render-state input-state]
@@ -54,7 +63,7 @@
         ^java.awt.Component canvas (s/canvas 
                                      :size   [width :by height]
                                      :paint  (fn [c ^java.awt.Graphics2D g]
-                                               (let [{:keys [entities time-delta camera score]} @render-state]
+                                               (let [{:keys [entities time-delta camera score beast-speed beast-margin]} @render-state]
                                                  (when entities
                                                    (doto g
                                                      (.setBackground (s.col/color "#0B0A1C"))
@@ -79,7 +88,15 @@
                                                                                 ["Entities" (if entities
                                                                                               (count (entities/list entities))
                                                                                               0)]
-                                                                                 ["Score" (if score score 0)]])]
+                                                                                ["Score" (if score score 0)]
+                                                                                ["Beast margin" (if beast-margin
+                                                                                                  (int beast-margin)
+                                                                                                  "Infinite")]
+                                                                                ["Beast speed" (if beast-speed
+                                                                                                 (int
+                                                                                                   (* beast-speed
+                                                                                                      game-entities/player-speed))
+                                                                                                 0)]])]
                                                      (doto g
                                                        (.setColor (s.col/color "white"))
                                                        (.drawString (str label ":" thing)
@@ -106,6 +123,16 @@
         (throw (Exception. (str "No effector for " statement-type)))))
     game-state
     (filter identity statements)))
+
+(defn converge-beast
+  [{:keys [time start-time] :as game-state}]
+  (-> game-state
+    (assoc :beast-margin (util/lerp (/ (- time start-time)
+                                       margin-converge-time)
+                                    max-margin min-margin))
+    (assoc :beast-speed (util/lerp (/ (- time start-time)
+                                      speed-converge-time)
+                                   min-speed max-speed))))
 
 (defn run
   [render-state input-state]
@@ -140,7 +167,8 @@
                          game-systems/explode-timers
                          game-systems/remove-timers
                          game-systems/explodify-explosions
-                         game-systems/check-for-getting-eaten])]
+                         game-systems/check-for-getting-eaten])
+          game-state    (converge-beast game-state)]
       (send render-state (constantly game-state))
       ; eat up the remaning time
       (let [remaining-time (- 1/30

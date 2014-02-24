@@ -173,17 +173,18 @@
           [:section-added]
           (create-extension (+ last-section i 1)))))))
 
-(let [margin 500]
   (defn pace-the-beast
-    [{:keys [entities camera]}]
+    [{:keys [entities camera beast-margin beast-speed]}]
     (util/flatten-1
       (-> entities
         (entities/of-type :beast)
         (entities/each
           (fn [beast]
-            (when (> (- (cam/left camera) (entity/right beast))
-                     margin)
-              [[:move beast {:x (- (cam/left camera) margin)}]])))))))
+            [[:accelerate beast {:x (* beast-speed game-entities/player-speed)
+                                 :relative? false}]
+             (when (> (- (cam/left camera) (entity/right beast))
+                      beast-margin)
+               [:move beast {:x (- (cam/left camera) beast-margin (entity/width beast))}])])))))
 
 (defn check-for-getting-eaten
   [{:keys [entities]}]
