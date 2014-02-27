@@ -136,7 +136,8 @@
   [render-state input-state]
   (loop [game-state (create-initial-game-state)]
     (let [start-time  (now)
-          time-delta    (- start-time (:time game-state))
+          time-delta    (min (- start-time (:time game-state))
+                             1/28)
           game-state    (assoc game-state
                                :time start-time
                                :time-delta time-delta
